@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestão de produtos | ConectaZap</title>
+    <script src="update.js" defer></script>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="shortcut icon" href="NetixZae.png" type="image/x-icon">
+  </head>
+  <body>
+   <header class="topo">
+    <h1 class="name"></h1>
+   </header>
+   <main class="opcoes">
+      <a class="meuSistema" aria-label="Acessar minha loja">
+        <i class="fa-solid fa-desktop" aria-hidden="true"></i>
+        <span>Minha loja</span>
+      </a>
+      <button class="add-product" type="button">
+        <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
+        <span>Adicionar produto</span>
+      </button>
+</main>
+    <main class="contagem">
+      <p class="disponivel"></p>
+      <p class="pausados"></p>
+    </main>
+
+    <h2 class="att">Atualizar produtos</h2>
+    <div id="loading">
+      <div class="loaading"></div>
+      <p>Carregando os produtos, por favor aguarde...</p>
+    </div>
+   
+    <div class="conteiner-produtos-att"></div>
+    <main class="edit">
+      <div class="content-edit">
+        <div class="top">
+          <img src="" alt="" width="60px" class="imgProduto" />
+          <p class="nomeP">nome</p>
+          <i class="fa-solid fa-xmark closeEdit"></i>
+        </div>
+        <div class="form">
+          <label for="att-nome">Nome do produto</label>
+          <input type="text" id="att-nome" />
+          <label for="att-description2">Descrição complementar</label>
+          <textarea id="att-description2" rows="3"></textarea>
+          <label for="att-valor">Preço</label>
+          <input type="number" name="valor" id="att-valor" min="0" step="0.01" />
+          <div class="status-field">
+            <input type="checkbox" id="att-status" />
+            <label for="att-status">Produto disponível</label>
+          </div>
+          <label for="att-thumbnail">Imagem (URL ou arquivo)</label>
+          <input type="text" id="att-thumbnail" />
+
+          <button class="apagarProduto">
+            <i class="fa-solid fa-trash"></i>
+            Apagar produto
+          </button>
+          <button class="att-produtos">Atualizar</button>
+        </div>
+      </div>
+    </main>
+    <main class="sucess">
+      <div class="ok">
+        <i class="fa-solid fa-circle-check"></i>
+        <h2 class="mensagem">Atualizado com sucesso!</h2>
+        <button onclick="fecharSucess()">Continuar</button>
+      </div>
+    </main>
+    <main class="failed">
+      <div class="erro">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <h2 class="mensagemErro">Falha ao atualizar!</h2>
+        <button onclick="fecharFailed()">Tente novamente</button>
+      </div>
+    </main>
+      <main class="new-conteiner">
+      <div class="form-new">
+        <i class="fa-solid fa-xmark closeNew"></i>
+        <p class="new-product-message" aria-live="polite"></p>
+        <label for="nome">Nome do produto</label>
+        <input type="text" id="new-nome" >
+        <label for="new-description2">Descrição complementar</label>
+        <textarea id="new-description2" rows="3" placeholder="Ex.: ingredientes, tamanho ou detalhes do produto"></textarea>
+        <label for="prince">Valor</label>
+        <input type="number" name="valor" id="new-valor">
+      <label for="linkUrl">Link da image</label>
+      <input type="text" name="" id="linkImg">
+        <button class="new-produto">Criar produto</button>
+      </div>
+    </main>
+  </body>
+</html>

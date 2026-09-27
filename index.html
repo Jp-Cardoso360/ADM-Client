@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="update.js" defer></script>
+<link rel="shortcut icon" href="ico.png" type="image/x-icon">
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <main class="login-layout">
+      <header class="login-intro">
+        <h1>Acesse sua conta</h1>
+        <p>Gerencie os produtos da sua loja</p>
+      </header>
+      <div id="Login-container">
+        <img class="logo" src="conectazap-logo.png" alt="ConectaZap" />
+        <form onsubmit="logar(event)">
+        <label for="email">Email <i class="fa-solid fa-envelope"></i></label>
+        <input
+          type="email"
+          name="email"
+          id="email"
+          placeholder="Insira seu Email"
+          autocomplete="off"
+          alt="Insira seu Email"
+        />
+        <label for="password">Senha <i class="fa-solid fa-lock"></i></label>
+        <input
+          type="password"
+          name="password"
+          id="password"
+          placeholder="Digite sua Senha"
+          alt="Digite sua Senha"
+        />
+        <span class="resLogin"></span>
+
+
+    <button type="submit">
+       <span class="mgsLogin">Fazer Login</span>
+       <span class="load">
+           <i class="fa-solid fa-spinner"></i>
+      </span>  
+      <span class="ok">
+        <i class="fa-solid fa-circle-check"></i>
+        Autorizado!
+      </span>
+   </button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
