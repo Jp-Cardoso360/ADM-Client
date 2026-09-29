@@ -1,5 +1,11 @@
 // Configurações iniciais
-const urlNetixZae = "https://netix-zae-api.vercel.app";
+const isLocalDevelopment =
+  window.location.protocol !== "file:" &&
+  ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const urlNetixZae = isLocalDevelopment
+  ? "http://localhost:3333"
+  : "https://netix-zae-api.vercel.app";
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const id_user = localStorage.getItem("id_user");
 const nome = localStorage.getItem("nome");
 let productsById = new Map();
@@ -7,6 +13,97 @@ const sucess = document.querySelector(".sucess");
 const mensagem = document.querySelector(".mensagem");
 const failed = document.querySelector(".failed");
 const mensagemErro = document.querySelector(".mensagemErro");
+
+async function validateImageFile(file) {
+  if (!file) return "Selecione uma imagem.";
+  if (file.size > MAX_IMAGE_SIZE) return "A imagem deve ter no máximo 5 MB.";
+  if (file.type && !file.type.startsWith("image/")) {
+    return "O arquivo selecionado não é uma imagem.";
+  }
+
+  try {
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(file);
+      bitmap.close();
+      return "";
+    }
+
+    const isValid = await new Promise((resolve) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(true);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(false);
+      };
+      image.src = objectUrl;
+    });
+    return isValid ? "" : "O arquivo selecionado não contém uma imagem válida.";
+  } catch {
+    return "O arquivo selecionado não contém uma imagem válida.";
+  }
+}
+
+async function updateImageSelection(input, message) {
+  const file = input.files[0];
+  if (!file) {
+    message.textContent = "";
+    message.classList.remove("is-visible", "is-error");
+    return;
+  }
+
+  message.textContent = "Validando imagem...";
+  message.classList.add("is-visible");
+  message.classList.remove("is-error");
+  const error = await validateImageFile(file);
+  if (input.files[0] !== file) return;
+
+  if (error) {
+    input.value = "";
+    message.textContent = error;
+    message.classList.add("is-visible", "is-error");
+    return;
+  }
+
+  message.textContent = file.name;
+  message.classList.add("is-visible");
+  message.classList.remove("is-error");
+}
+
+async function uploadProductImage(file) {
+  const formData = new FormData();
+  formData.append("imagem", file);
+  formData.append("empresaId", id_user);
+
+  const response = await fetch(`${urlNetixZae}/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.mensagem || result.message || `Erro no upload: ${response.status}`);
+  }
+  if (!result.url) throw new Error("A API não retornou a URL da imagem.");
+  return result.url;
+}
+
+const createImageInput = document.getElementById("linkImg");
+if (createImageInput) {
+  createImageInput.addEventListener("change", () => {
+    updateImageSelection(createImageInput, document.querySelector(".new-product-message"));
+  });
+}
+
+const updateImageInput = document.getElementById("att-thumbnail");
+if (updateImageInput) {
+  updateImageInput.addEventListener("change", () => {
+    updateImageSelection(updateImageInput, document.getElementById("att-image-message"));
+  });
+}
 
 fecharSucess = () => {
   sucess.style = "display:none";
@@ -204,9 +301,7 @@ async function carregarPerfilUsuario() {
 
 async function buscarDisponiveis() {
   try {
-    const response = await fetch(
-      `https://netix-zae-api.vercel.app/dashboard/${id_user}`
-    );
+    const response = await fetch(`${urlNetixZae}/dashboard/${id_user}`);
 
     if (!response.ok) {
       throw new Error("Erro ao buscar informações da API");
@@ -245,8 +340,10 @@ function openEdit(id) {
   document.querySelector(".nomeP").textContent = product.description || "";
   document.getElementById("att-valor").value = product.price ?? "";
   document.getElementById("att-status").checked = Boolean(product.status);
-  document.getElementById("att-thumbnail").value =
-    product.thumbnail || product.thumbnail_url || "";
+  document.getElementById("att-thumbnail").value = "";
+  const updateImageMessage = document.getElementById("att-image-message");
+  updateImageMessage.textContent = "";
+  updateImageMessage.classList.remove("is-error");
   document.querySelector(".imgProduto").src =
     product.thumbnail_url || product.thumbnail || "";
 
@@ -261,19 +358,38 @@ function openEdit(id) {
     apagarProduto(id);
   };
   async function atualizarP(id) {
+    const atualizarButton = document.querySelector(".att-produtos");
+    atualizarButton.disabled = true;
     try {
       const attNome = document.getElementById("att-nome").value.trim();
       const attDescription2 = document.getElementById("att-description2").value.trim();
       const priceValue = document.getElementById("att-valor").value;
-      const attThumbnail = document.getElementById("att-thumbnail").value.trim();
+      const imageFile = document.getElementById("att-thumbnail").files[0];
       const attValor = Number(priceValue);
       const attStatus = document.getElementById("att-status").checked;
 
-      if (!attNome || !attDescription2 || !priceValue || !attThumbnail || !Number.isFinite(attValor)) {
+      if (!attNome || !attDescription2 || !priceValue || !Number.isFinite(attValor)) {
         failed.style = "display:flex";
         mensagemErro.textContent = "Preencha todos os campos do produto.";
         return;
       }
+
+      if (imageFile) {
+        const imageMessage = document.getElementById("att-image-message");
+        imageMessage.textContent = "Validando imagem...";
+        imageMessage.classList.remove("is-error");
+        const imageError = await validateImageFile(imageFile);
+        if (imageError) throw new Error(imageError);
+        imageMessage.textContent = "Enviando imagem...";
+      }
+
+      const payload = {
+        description: attNome,
+        description2: attDescription2,
+        price: attValor,
+        status: attStatus,
+      };
+      if (imageFile) payload.thumbnail = await uploadProductImage(imageFile);
 
       const reqAtt = await fetch(`${urlNetixZae}/atualizar/${id}`, {
         method: "PUT",
@@ -281,13 +397,7 @@ function openEdit(id) {
           "Content-Type": "application/json",
           user_id: id_user,
         },
-        body: JSON.stringify({
-          description: attNome,
-          description2: attDescription2,
-          price: attValor,
-          status: attStatus,
-          thumbnail: attThumbnail,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!reqAtt.ok) {
@@ -306,7 +416,9 @@ function openEdit(id) {
     } catch (error) {
       console.error("Erro na atualização:", error);
       failed.style = "display:flex";
-      mensagemErro.innerHTML = "Erro ao atualizar produto: " + error.message;
+      mensagemErro.textContent = "Erro ao atualizar produto: " + error.message;
+    } finally {
+      atualizarButton.disabled = false;
     }
   }
 
@@ -365,20 +477,38 @@ if (closeNew && newConteiner) {
 
 async function novoProduto() {
   const formMessage = document.querySelector(".new-product-message");
+  const createButton = document.querySelector(".new-produto");
   formMessage.textContent = "";
   formMessage.classList.remove("is-visible");
 
   const newNome = document.getElementById("new-nome").value.trim();
   const description2 = document.getElementById("new-description2").value.trim();
   const newValor = document.getElementById("new-valor").value;
-  const linkImg = document.getElementById("linkImg").value.trim();
+  const imageFile = document.getElementById("linkImg").files[0];
+  const newValorNumber = Number(newValor);
 
-  if (!newNome || !description2 || !newValor || !linkImg) {
+  if (!newNome || !description2 || !newValor || !Number.isFinite(newValorNumber) || !imageFile) {
     formMessage.textContent = "Preencha todos os campos para criar o produto.";
     formMessage.classList.add("is-visible");
     return;
   }
+
+  formMessage.textContent = "Validando imagem...";
+  formMessage.classList.add("is-visible");
+  const imageError = await validateImageFile(imageFile);
+  if (imageError) {
+    formMessage.textContent = imageError;
+    formMessage.classList.add("is-visible");
+    return;
+  }
+
+  createButton.disabled = true;
   try {
+    formMessage.textContent = "Enviando imagem...";
+    formMessage.classList.add("is-visible");
+    const imageUrl = await uploadProductImage(imageFile);
+    formMessage.textContent = "Imagem enviada. Cadastrando produto...";
+
     const reqNew = await fetch(`${urlNetixZae}/add-produto`, {
       method: "POST",
       headers: {
@@ -391,7 +521,7 @@ async function novoProduto() {
         description2,
         price: newValor,
         status: true,
-        thumbnail: linkImg,
+        thumbnail: imageUrl,
       }),
     });
 
@@ -409,5 +539,7 @@ async function novoProduto() {
     console.error("Erro na criação:", error);
     formMessage.textContent = `Não foi possível criar o produto: ${error.message}`;
     formMessage.classList.add("is-visible");
+  } finally {
+    createButton.disabled = false;
   }
 }

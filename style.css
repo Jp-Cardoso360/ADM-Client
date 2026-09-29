@@ -477,6 +477,25 @@ padding: 10px;
   display: block;
 }
 
+.image-message {
+  width: 70%;
+  min-height: 1.2em;
+  margin: 4px auto 8px;
+  color: var(--muted-color);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.image-message.is-error {
+  color: #9c2c2c;
+}
+
+.new-produto:disabled,
+.att-produtos:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .form-new button{
   padding: 15px;
   margin: 20px;
