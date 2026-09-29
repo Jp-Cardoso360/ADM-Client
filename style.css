@@ -237,6 +237,10 @@ body{
   .form input{
     padding: 10px;
   }
+  .form input:not([type="checkbox"]) {
+    width: 85%;
+    margin: 5px 0;
+  }
   .form textarea {
     width: 70%;
     min-height: 82px;
