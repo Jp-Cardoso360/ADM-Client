@@ -9,6 +9,8 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const id_user = localStorage.getItem("id_user");
 const nome = localStorage.getItem("nome");
 let productsById = new Map();
+let empresaAtual = null;
+let companyBannerObjectUrl = null;
 const sucess = document.querySelector(".sucess");
 const mensagem = document.querySelector(".mensagem");
 const failed = document.querySelector(".failed");
@@ -103,6 +105,105 @@ if (updateImageInput) {
   updateImageInput.addEventListener("change", () => {
     updateImageSelection(updateImageInput, document.getElementById("att-image-message"));
   });
+}
+
+const companySettings = document.querySelector(".company-settings");
+const companySettingsForm = document.getElementById("company-settings-form");
+const companyBannerInput = document.getElementById("company-banner");
+
+function setCompanyMessage(text, state = "") {
+  const message = document.querySelector(".company-settings-message");
+  message.textContent = text;
+  message.dataset.state = state;
+}
+
+function normalizedSystemColor(color) {
+  const value = typeof color === "string" ? color.trim() : "";
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
+  if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+    return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+  }
+  return "#2ECC71";
+}
+
+function companyBannerUrl(user) {
+  return user.banner || user.banner_url || user.bannerUrl || "";
+}
+
+function showCompanyBannerPreview(source) {
+  if (companyBannerObjectUrl) {
+    URL.revokeObjectURL(companyBannerObjectUrl);
+    companyBannerObjectUrl = null;
+  }
+
+  const preview = document.querySelector(".company-banner-preview");
+  const emptyMessage = document.querySelector(".company-banner-empty");
+  preview.hidden = !source;
+  emptyMessage.hidden = Boolean(source);
+  preview.src = source || "";
+}
+
+function fillCompanySettings(user) {
+  document.getElementById("company-name").value = user.nome || "";
+  document.getElementById("company-color").value = normalizedSystemColor(user.corSistema);
+  showCompanyBannerPreview(companyBannerUrl(user));
+  document.getElementById("company-banner").value = "";
+  document.querySelector(".company-banner-message").textContent = "";
+  setCompanyMessage("");
+}
+
+const openCompanySettingsButton = document.querySelector(".edit-company");
+if (openCompanySettingsButton && companySettings) {
+  openCompanySettingsButton.disabled = true;
+  openCompanySettingsButton.addEventListener("click", () => {
+    if (!empresaAtual) return;
+    fillCompanySettings(empresaAtual);
+    companySettings.classList.add("is-open");
+    companySettings.setAttribute("aria-hidden", "false");
+  });
+}
+
+const closeCompanySettingsButton = document.querySelector(".company-settings-close");
+if (closeCompanySettingsButton && companySettings) {
+  closeCompanySettingsButton.addEventListener("click", () => {
+    companySettings.classList.remove("is-open");
+    companySettings.setAttribute("aria-hidden", "true");
+  });
+}
+
+if (companyBannerInput) {
+  companyBannerInput.addEventListener("change", async () => {
+    const file = companyBannerInput.files[0];
+    const message = document.querySelector(".company-banner-message");
+    if (!file) {
+      message.textContent = "";
+      showCompanyBannerPreview(companyBannerUrl(empresaAtual || {}));
+      return;
+    }
+
+    message.textContent = "Validando banner...";
+    const imageError = await validateImageFile(file);
+    if (companyBannerInput.files[0] !== file) return;
+    if (imageError) {
+      companyBannerInput.value = "";
+      message.textContent = imageError;
+      message.classList.add("is-error");
+      showCompanyBannerPreview(companyBannerUrl(empresaAtual || {}));
+      return;
+    }
+
+    message.textContent = file.name;
+    message.classList.remove("is-error");
+    companyBannerObjectUrl = URL.createObjectURL(file);
+    const preview = document.querySelector(".company-banner-preview");
+    preview.src = companyBannerObjectUrl;
+    preview.hidden = false;
+    document.querySelector(".company-banner-empty").hidden = true;
+  });
+}
+
+if (companySettingsForm) {
+  companySettingsForm.addEventListener("submit", salvarDadosEmpresa);
 }
 
 fecharSucess = () => {
@@ -286,16 +387,86 @@ async function carregarPerfilUsuario() {
     const users = await response.json();
     const user = users.find((item) => item._id === id_user);
     if (!user) throw new Error("Usuário não encontrado.");
+    empresaAtual = user;
+    fillCompanySettings(user);
+    if (openCompanySettingsButton) openCompanySettingsButton.disabled = false;
 
-    const corRecebida = typeof user.corSistema === "string" ? user.corSistema.trim() : "";
-    const corSistema = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(corRecebida)
-      ? corRecebida
-      : "#2ECC71";
+    const corSistema = normalizedSystemColor(user.corSistema);
 
     document.documentElement.style.setProperty("--system-primary-color", corSistema);
     document.querySelector(".name").textContent = `Olá, ${user.nome || nome || "usuário"}`;
   } catch (error) {
     console.error("Erro ao carregar o perfil do usuário:", error);
+  }
+}
+
+async function salvarDadosEmpresa(event) {
+  event.preventDefault();
+  const saveButton = document.querySelector(".company-settings-save");
+  if (!empresaAtual) {
+    setCompanyMessage("Os dados da empresa ainda não foram carregados.", "error");
+    return;
+  }
+  const bannerFile = companyBannerInput.files[0];
+  const companyName = document.getElementById("company-name").value.trim();
+  const systemColor = document.getElementById("company-color").value;
+
+  if (!companyName) {
+    setCompanyMessage("Informe o nome da empresa.", "error");
+    return;
+  }
+
+  saveButton.disabled = true;
+  try {
+    const formData = new FormData();
+    let hasChanges = false;
+
+    if (companyName !== (empresaAtual.nome || "")) {
+      formData.append("nome", companyName);
+      hasChanges = true;
+    }
+    if (systemColor.toLowerCase() !== normalizedSystemColor(empresaAtual.corSistema).toLowerCase()) {
+      formData.append("corSistema", systemColor);
+      hasChanges = true;
+    }
+    if (bannerFile) {
+      setCompanyMessage("Validando banner...", "loading");
+      const imageError = await validateImageFile(bannerFile);
+      if (imageError) throw new Error(imageError);
+      formData.append("banner", bannerFile);
+      hasChanges = true;
+    }
+
+    if (!hasChanges) {
+      setCompanyMessage("Não há alterações para salvar.", "error");
+      return;
+    }
+
+    setCompanyMessage(bannerFile ? "Enviando alterações e banner..." : "Salvando alterações...", "loading");
+    const response = await fetch(`${urlNetixZae}/users/${id_user}`, {
+      method: "PUT",
+      headers: {
+        user_id: id_user,
+      },
+      body: formData,
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok !== true || !result.user) {
+      throw new Error(result.mensagem || result.message || `Erro ao atualizar empresa: ${response.status}`);
+    }
+
+    empresaAtual = { ...empresaAtual, ...result.user };
+    localStorage.setItem("nome", empresaAtual.nome || companyName);
+    document.querySelector(".name").textContent = `Olá, ${empresaAtual.nome || nome || "usuário"}`;
+    const updatedColor = normalizedSystemColor(empresaAtual.corSistema);
+    document.documentElement.style.setProperty("--system-primary-color", updatedColor);
+    fillCompanySettings(empresaAtual);
+    setCompanyMessage("Dados da empresa atualizados com sucesso.", "success");
+  } catch (error) {
+    console.error("Erro ao atualizar dados da empresa:", error);
+    setCompanyMessage(error.message || "Não foi possível atualizar os dados da empresa.", "error");
+  } finally {
+    saveButton.disabled = false;
   }
 }
 

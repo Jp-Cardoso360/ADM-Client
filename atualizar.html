@@ -28,7 +28,35 @@
         <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
         <span>Adicionar produto</span>
       </button>
+      <button class="edit-company" type="button">
+        <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        <span>Dados da empresa</span>
+      </button>
 </main>
+    <section class="company-settings" aria-hidden="true">
+      <div class="company-settings-panel" role="dialog" aria-modal="true" aria-labelledby="company-settings-title">
+        <button class="company-settings-close" type="button" aria-label="Fechar configurações">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <h2 id="company-settings-title">Dados da empresa</h2>
+        <form class="company-settings-form" id="company-settings-form">
+          <p class="company-settings-message" aria-live="polite"></p>
+          <label for="company-name">Nome da empresa</label>
+          <input type="text" id="company-name" name="nome" required />
+          <label for="company-color">Cor do sistema</label>
+          <input type="color" id="company-color" name="corSistema" />
+          <label>Banner atual</label>
+          <div class="company-banner-preview-wrap">
+            <img class="company-banner-preview" alt="Pré-visualização do banner da empresa" hidden />
+            <p class="company-banner-empty">Nenhum banner cadastrado</p>
+          </div>
+          <label for="company-banner">Novo banner (opcional)</label>
+          <input type="file" id="company-banner" name="banner" accept="image/*" />
+          <p class="company-banner-message" aria-live="polite"></p>
+          <button class="company-settings-save" type="submit">Salvar alterações</button>
+        </form>
+      </div>
+    </section>
     <main class="contagem">
       <p class="disponivel"></p>
       <p class="pausados"></p>
