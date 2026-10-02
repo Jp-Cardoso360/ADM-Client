@@ -688,7 +688,9 @@ body {
 
 .company-banner-preview-wrap {
   display: grid;
-  min-height: 112px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 0;
   place-items: center;
   overflow: hidden;
   border: 1px dashed var(--border-color);
@@ -699,8 +701,9 @@ body {
 .company-banner-preview {
   display: block;
   width: 100%;
-  max-height: 190px;
-  object-fit: cover;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
 }
 
 .company-banner-preview[hidden],
@@ -839,7 +842,8 @@ body {
 }
 
 .category-list-message,
-.category-form-message {
+.category-form-message,
+.category-order-message {
   min-height: 1.4em;
   margin: 8px 0;
   color: var(--muted-color);
@@ -858,8 +862,7 @@ body {
 .category-list li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   min-height: 46px;
   padding: 6px 8px 6px 12px;
   border: 1px solid var(--border-color);
@@ -869,6 +872,49 @@ body {
 .category-list li span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.category-name {
+  flex: 1 1 auto;
+}
+
+.category-position {
+  flex: 0 0 28px;
+  color: var(--muted-color);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.category-row-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.category-move-button {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.category-move-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.category-move-button:not(:disabled):hover {
+  background: #e8eeeb;
 }
 
 .category-delete-button {
@@ -884,9 +930,36 @@ body {
 }
 
 .category-delete-button:disabled,
-.category-create-button:disabled {
+.category-create-button:disabled,
+.category-order-save:disabled {
   cursor: wait;
   opacity: 0.6;
+}
+
+.category-delete-button:disabled {
+  cursor: not-allowed;
+}
+
+.category-order-save {
+  width: 100%;
+  min-height: 42px;
+  margin: 0 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: #25332c;
+  color: #ffffff;
+  font: 600 1rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.category-order-save:not(:disabled):hover {
+  background: #394a40;
+}
+
+.category-order-save:focus-visible,
+.category-move-button:focus-visible {
+  outline: 3px solid var(--system-primary-color);
+  outline-offset: 2px;
 }
 
 .category-create-form {

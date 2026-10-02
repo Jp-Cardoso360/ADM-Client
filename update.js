@@ -708,9 +708,13 @@ const categoryManager = document.querySelector(".category-manager");
 const categoryList = document.querySelector(".category-list");
 const categoryListMessage = document.querySelector(".category-list-message");
 const categoryFormMessage = document.querySelector(".category-form-message");
+const categoryOrderMessage = document.querySelector(".category-order-message");
+const categoryOrderSaveButton = document.querySelector(".category-order-save");
 const categoryCreateButton = document.querySelector(".category-create-button");
 const categoryCreateForm = document.querySelector(".category-create-form");
 const manageCategoriesButton = document.querySelector(".manage-categories");
+let categoryOrderDirty = false;
+let isSavingCategoryOrder = false;
 
 function hasCurrentUser() {
   return Boolean(id_user && id_user !== "null" && id_user !== "undefined");
@@ -759,23 +763,83 @@ function updateProductCategorySelects() {
 function renderCategories() {
   categoryList.replaceChildren();
   categoryListMessage.textContent = categories.length ? "" : "Nenhuma categoria cadastrada.";
-  categories.forEach((category) => {
+  categories.forEach((category, index) => {
     const item = document.createElement("li");
     const name = document.createElement("span");
+    name.className = "category-name";
     name.textContent = category.name;
+
+    const position = document.createElement("span");
+    position.className = "category-position";
+    position.textContent = String(index + 1);
+    position.setAttribute("aria-label", `Posição ${index + 1}`);
+
+    const controls = document.createElement("div");
+    controls.className = "category-row-controls";
+
+    const moveUpButton = document.createElement("button");
+    moveUpButton.type = "button";
+    moveUpButton.className = "category-move-button";
+    moveUpButton.setAttribute("aria-label", `Mover ${category.name} para cima`);
+    moveUpButton.title = `Mover ${category.name} para cima`;
+    moveUpButton.disabled = index === 0 || isSavingCategoryOrder;
+    const upIcon = document.createElement("i");
+    upIcon.className = "fa-solid fa-chevron-up";
+    upIcon.setAttribute("aria-hidden", "true");
+    moveUpButton.append(upIcon);
+    moveUpButton.addEventListener("click", () => moveCategory(category.id, -1));
+
+    const moveDownButton = document.createElement("button");
+    moveDownButton.type = "button";
+    moveDownButton.className = "category-move-button";
+    moveDownButton.setAttribute("aria-label", `Mover ${category.name} para baixo`);
+    moveDownButton.title = `Mover ${category.name} para baixo`;
+    moveDownButton.disabled = index === categories.length - 1 || isSavingCategoryOrder;
+    const downIcon = document.createElement("i");
+    downIcon.className = "fa-solid fa-chevron-down";
+    downIcon.setAttribute("aria-hidden", "true");
+    moveDownButton.append(downIcon);
+
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "category-delete-button";
     deleteButton.setAttribute("aria-label", `Apagar categoria ${category.name}`);
     deleteButton.title = `Apagar ${category.name}`;
+    deleteButton.disabled = categoryOrderDirty || isSavingCategoryOrder;
     const icon = document.createElement("i");
     icon.className = "fa-solid fa-trash";
     icon.setAttribute("aria-hidden", "true");
     deleteButton.append(icon);
     deleteButton.addEventListener("click", () => deleteCategory(category, deleteButton));
-    item.append(name, deleteButton);
+    controls.append(moveUpButton, moveDownButton, deleteButton);
+    item.append(name, position, controls);
     categoryList.append(item);
   });
+  updateCategoryOrderControls();
+}
+
+function updateCategoryOrderControls() {
+  if (categoryOrderSaveButton) {
+    categoryOrderSaveButton.disabled = !categoryOrderDirty || isSavingCategoryOrder;
+  }
+  if (categoryCreateButton) {
+    categoryCreateButton.disabled = categoryOrderDirty || isSavingCategoryOrder;
+  }
+  categoryList.querySelectorAll(".category-delete-button").forEach((button) => {
+    button.disabled = categoryOrderDirty || isSavingCategoryOrder;
+  });
+}
+
+function moveCategory(categoryId, direction) {
+  if (isSavingCategoryOrder) return;
+  const currentIndex = categories.findIndex((category) => category.id === categoryId);
+  const nextIndex = currentIndex + direction;
+  if (currentIndex < 0 || nextIndex < 0 || nextIndex >= categories.length) return;
+
+  [categories[currentIndex], categories[nextIndex]] = [categories[nextIndex], categories[currentIndex]];
+  categoryOrderDirty = true;
+  categoryOrderMessage.textContent = "Ordem alterada. Salve para atualizar as posições no banco de dados.";
+  renderCategories();
 }
 
 async function loadCategories() {
@@ -795,12 +859,16 @@ async function loadCategories() {
     .map((category, index) => ({ ...category, index }))
     .sort((first, second) => first.order - second.order || first.index - second.index)
     .map(({ index, ...category }) => category);
+  categoryOrderDirty = false;
+  categoryOrderMessage.textContent = "";
   renderCategories();
   updateProductCategorySelects();
   return categories;
 }
 
 function closeCategoryManager() {
+  if (categoryOrderDirty && !window.confirm("Descartar a nova ordem das categorias?")) return;
+  categoryOrderDirty = false;
   categoryManager.classList.remove("is-open");
   categoryManager.setAttribute("aria-hidden", "true");
 }
@@ -825,8 +893,49 @@ if (manageCategoriesButton && categoryManager) manageCategoriesButton.addEventLi
 const closeCategoryManagerButton = document.querySelector(".category-manager-close");
 if (closeCategoryManagerButton) closeCategoryManagerButton.addEventListener("click", closeCategoryManager);
 
+if (categoryOrderSaveButton) categoryOrderSaveButton.addEventListener("click", salvarOrdemCategorias);
+
+async function salvarOrdemCategorias() {
+  if (!hasCurrentUser() || !categoryOrderDirty || isSavingCategoryOrder) return;
+
+  isSavingCategoryOrder = true;
+  categoryOrderMessage.textContent = "Salvando ordem das categorias...";
+  updateCategoryOrderControls();
+  try {
+    for (const [order, category] of categories.entries()) {
+      const response = await fetch(`${urlNetixZae}/categories/${encodeURIComponent(category.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", user_id: id_user },
+        body: JSON.stringify({ ordem: order }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(categoryApiError(body, response.status));
+      const updatedCategory = normalizeCategory(body?.category ?? body);
+      if (!updatedCategory || updatedCategory.id !== category.id || updatedCategory.order !== order) {
+        throw new Error(`A API não confirmou a posição de “${category.name}”.`);
+      }
+    }
+
+    categories = categories.map((category, order) => ({ ...category, order }));
+    categoryOrderDirty = false;
+    updateProductCategorySelects();
+    closeCategoryManager();
+    mostrarSucesso("Ordem das categorias salva com sucesso!");
+  } catch (error) {
+    categoryOrderMessage.textContent = `Não foi possível salvar a ordem: ${error.message}. Você pode tentar novamente.`;
+  } finally {
+    isSavingCategoryOrder = false;
+    updateCategoryOrderControls();
+    renderCategories();
+  }
+}
+
 if (categoryCreateForm) categoryCreateForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (categoryOrderDirty) {
+    categoryOrderMessage.textContent = "Salve ou descarte a nova ordem antes de criar uma categoria.";
+    return;
+  }
   const name = document.getElementById("category-name").value.trim();
   if (!name) {
     categoryFormMessage.textContent = "Informe o nome da categoria.";
@@ -866,6 +975,7 @@ if (categoryCreateForm) categoryCreateForm.addEventListener("submit", async (eve
 });
 
 async function deleteCategory(category, button) {
+  if (categoryOrderDirty) return;
   if (!hasCurrentUser()) return;
   if (!window.confirm(`Apagar a categoria “${category.name}”?`)) return;
   button.disabled = true;
