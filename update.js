@@ -9,6 +9,8 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const id_user = localStorage.getItem("id_user");
 const nome = localStorage.getItem("nome");
 let productsById = new Map();
+let categories = [];
+let pendingProductCategoryId = "";
 let empresaAtual = null;
 let companyBannerObjectUrl = null;
 const sucess = document.querySelector(".sucess");
@@ -207,7 +209,12 @@ if (companySettingsForm) {
 }
 
 fecharSucess = () => {
-  sucess.style = "display:none";
+  sucess.style.display = "none";
+};
+
+function mostrarSucesso(text) {
+  mensagem.textContent = text;
+  sucess.style.display = "flex";
 };
 fecharFailed = () => {
   failed.style = "display:none";
@@ -304,30 +311,88 @@ async function fetchProducts() {
 
 function renderProducts(products) {
   const container = document.querySelector(".conteiner-produtos-att");
-  productsById = new Map(products.map((product) => [product._id, product]));
-  const elements = products.map(
-    (product) => `
-   <div class="product">
-      <img src="${product.thumbnail_url}" alt="carregando.." loading="lazy" />
-      <p class="description">${product.description}</p>
-      <p class="prince"><strong>R$ ${parseFloat(product.price)
-        .toFixed(2)
-        .replace(".", ",")}</strong></p>
-      <div class="btn">
-        <button 
-          onclick="toggleProductStatus('${product.id}', ${product.status})"
-          class="${product.status ? "btn-pausar" : "btn-ativar"}">
-          ${product.status ? "Pausar" : "Ativar"}
-        </button>
-         <i class="fa-solid fa-pen" onclick="openEdit('${product._id}')"></i>
-      </div>
-    </div>
-  `
-  );
+  productsById = new Map(products.map((product) => [product._id ?? product.id, product]));
+  container.replaceChildren();
+  const productsByCategory = new Map(categories.map((category) => [category.id, []]));
+  const uncategorizedProducts = [];
 
-  container.innerHTML = elements.join("");
+  products.forEach((product) => {
+    const categoryId = String(product.categoriaId ?? product.categoryId ?? "");
+    const group = productsByCategory.get(categoryId);
+    if (group) group.push(product);
+    else uncategorizedProducts.push(product);
+  });
+
+  categories.forEach((category) => {
+    renderProductGroup(container, category.name, productsByCategory.get(category.id));
+  });
+  if (uncategorizedProducts.length) renderProductGroup(container, "Sem categoria", uncategorizedProducts);
+
   const meuSistema = document.querySelector(".meuSistema");
   meuSistema.href = `https://comercio-zap.netlify.app/${id_user}`;
+}
+
+function renderProductGroup(container, title, products) {
+  const section = document.createElement("section");
+  section.className = "product-category-section";
+
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+
+  const productList = document.createElement("div");
+  productList.className = "category-products";
+  if (!products.length) {
+    const emptyMessage = document.createElement("p");
+    emptyMessage.className = "category-empty-message";
+    emptyMessage.textContent = "Nenhum produto nesta categoria.";
+    productList.append(emptyMessage);
+  }
+
+  products.forEach((product) => {
+    const card = document.createElement("article");
+    card.className = "product";
+
+    const image = document.createElement("img");
+    image.src = product.thumbnail_url || product.thumbnail || "";
+    image.alt = product.description || "Imagem do produto";
+    image.loading = "lazy";
+
+    const description = document.createElement("p");
+    description.className = "description";
+    description.textContent = product.description || "";
+
+    const price = document.createElement("p");
+    price.className = "prince";
+    const priceValue = document.createElement("strong");
+    const parsedPrice = Number(product.price);
+    priceValue.textContent = `R$ ${Number.isFinite(parsedPrice) ? parsedPrice.toFixed(2).replace(".", ",") : "0,00"}`;
+    price.append(priceValue);
+
+    const actions = document.createElement("div");
+    actions.className = "btn";
+    const statusButton = document.createElement("button");
+    statusButton.type = "button";
+    statusButton.className = product.status ? "btn-pausar" : "btn-ativar";
+    statusButton.textContent = product.status ? "Pausar" : "Ativar";
+    statusButton.addEventListener("click", () => toggleProductStatus(product.id ?? product._id, product.status));
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "product-edit-button";
+    editButton.setAttribute("aria-label", `Editar ${product.description || "produto"}`);
+    const editIcon = document.createElement("i");
+    editIcon.className = "fa-solid fa-pen";
+    editIcon.setAttribute("aria-hidden", "true");
+    editButton.append(editIcon);
+    editButton.addEventListener("click", () => openEdit(product._id ?? product.id));
+
+    actions.append(statusButton, editButton);
+    card.append(image, description, price, actions);
+    productList.append(card);
+  });
+
+  section.append(heading, productList);
+  container.append(section);
 }
 
 async function toggleProductStatus(productId, currentStatus) {
@@ -346,10 +411,9 @@ async function toggleProductStatus(productId, currentStatus) {
     });
 
     if (response.ok) {
-      sucess.style = "display:flex";
-      mensagem.innerHTML = `Produto ${
+      mostrarSucesso(`Produto ${
         newStatus ? "ativado" : "pausado"
-      } com sucesso!`;
+      } com sucesso!`);
       fetchProducts();
       buscarDisponiveis();
     } else {
@@ -376,6 +440,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   carregarPerfilUsuario();
   fetchProducts();
+  loadCategories().catch((error) => {
+    document.querySelector(".category-feedback").textContent = `Não foi possível carregar as categorias: ${error.message}`;
+  });
   buscarDisponiveis();
 });
 
@@ -461,7 +528,9 @@ async function salvarDadosEmpresa(event) {
     const updatedColor = normalizedSystemColor(empresaAtual.corSistema);
     document.documentElement.style.setProperty("--system-primary-color", updatedColor);
     fillCompanySettings(empresaAtual);
-    setCompanyMessage("Dados da empresa atualizados com sucesso.", "success");
+    companySettings.classList.remove("is-open");
+    companySettings.setAttribute("aria-hidden", "true");
+    mostrarSucesso("Dados da empresa atualizados com sucesso!");
   } catch (error) {
     console.error("Erro ao atualizar dados da empresa:", error);
     setCompanyMessage(error.message || "Não foi possível atualizar os dados da empresa.", "error");
@@ -473,7 +542,6 @@ async function salvarDadosEmpresa(event) {
 async function buscarDisponiveis() {
   try {
     const response = await fetch(`${urlNetixZae}/dashboard/${id_user}`);
-
     if (!response.ok) {
       throw new Error("Erro ao buscar informações da API");
     }
@@ -511,6 +579,19 @@ function openEdit(id) {
   document.querySelector(".nomeP").textContent = product.description || "";
   document.getElementById("att-valor").value = product.price ?? "";
   document.getElementById("att-status").checked = Boolean(product.status);
+  populateCategorySelect(document.getElementById("att-category"), product.categoriaId ?? product.categoryId ?? "");
+  const categoryMessage = document.getElementById("att-category-message");
+  if (categoryMessage) categoryMessage.textContent = "";
+  if (!categories.length) {
+    loadCategories().then(() => {
+      populateCategorySelect(document.getElementById("att-category"), product.categoriaId ?? product.categoryId ?? "");
+      if (categoryMessage) categoryMessage.textContent = "";
+    }).catch((error) => {
+      const message = `Não foi possível carregar as categorias: ${error.message}`;
+      if (categoryMessage) categoryMessage.textContent = message;
+      else document.querySelector(".category-feedback").textContent = message;
+    });
+  }
   document.getElementById("att-thumbnail").value = "";
   const updateImageMessage = document.getElementById("att-image-message");
   updateImageMessage.textContent = "";
@@ -559,6 +640,7 @@ function openEdit(id) {
         description2: attDescription2,
         price: attValor,
         status: attStatus,
+        categoriaId: document.getElementById("att-category").value || null,
       };
       if (imageFile) payload.thumbnail = await uploadProductImage(imageFile);
 
@@ -582,8 +664,7 @@ function openEdit(id) {
       localStorage.removeItem(`products:${id_user}`);
       await fetchProducts();
       await buscarDisponiveis();
-      sucess.style = "display:flex";
-      mensagem.textContent = "Produto atualizado com sucesso!";
+      mostrarSucesso("Produto atualizado com sucesso!");
     } catch (error) {
       console.error("Erro na atualização:", error);
       failed.style = "display:flex";
@@ -606,10 +687,9 @@ function openEdit(id) {
       mensagemErro.innerHTML = "Falha ao atualizar!";
     } else {
       const res = await reqDelete.json();
-      sucess.style = "display:flex";
-      mensagem.innerHTML = res.Mensagem;
       fetchProducts();
       edit.style.display = "none";
+      mostrarSucesso(res.Mensagem || "Produto apagado com sucesso!");
     }
   }
 }
@@ -624,10 +704,205 @@ if (closeEdit) {
 
 const addProduto = document.querySelector(".add-product");
 const newConteiner = document.querySelector(".new-conteiner");
+const categoryManager = document.querySelector(".category-manager");
+const categoryList = document.querySelector(".category-list");
+const categoryListMessage = document.querySelector(".category-list-message");
+const categoryFormMessage = document.querySelector(".category-form-message");
+const categoryCreateButton = document.querySelector(".category-create-button");
+const categoryCreateForm = document.querySelector(".category-create-form");
+const manageCategoriesButton = document.querySelector(".manage-categories");
+
+function hasCurrentUser() {
+  return Boolean(id_user && id_user !== "null" && id_user !== "undefined");
+}
+
+function categoryApiError(body, status) {
+  return body?.mensagem || body?.message || body?.error || `Erro na API: ${status}`;
+}
+
+function normalizeCategory(value) {
+  if (!value || typeof value !== "object") return null;
+  const id = value._id ?? value.id;
+  const name = value.name ?? value.nome;
+  if (id === undefined || id === null || typeof name !== "string" || !name.trim()) return null;
+  const order = Number(value.ordem);
+  return {
+    id: String(id),
+    name: name.trim(),
+    order: Number.isFinite(order) ? order : Number.MAX_SAFE_INTEGER,
+  };
+}
+
+function populateCategorySelect(select, selectedId = "") {
+  if (!select) return;
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Sem categoria";
+  select.replaceChildren(placeholder);
+  categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.textContent = category.name;
+    select.append(option);
+  });
+  select.value = categories.some((category) => category.id === String(selectedId)) ? String(selectedId) : "";
+}
+
+function updateProductCategorySelects() {
+  const newCategorySelect = document.getElementById("new-category");
+  const selectedNewCategoryId = newCategorySelect?.value || pendingProductCategoryId;
+  populateCategorySelect(newCategorySelect, selectedNewCategoryId);
+  populateCategorySelect(document.getElementById("att-category"), document.getElementById("att-category")?.value || "");
+  renderProducts([...productsById.values()]);
+}
+
+function renderCategories() {
+  categoryList.replaceChildren();
+  categoryListMessage.textContent = categories.length ? "" : "Nenhuma categoria cadastrada.";
+  categories.forEach((category) => {
+    const item = document.createElement("li");
+    const name = document.createElement("span");
+    name.textContent = category.name;
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "category-delete-button";
+    deleteButton.setAttribute("aria-label", `Apagar categoria ${category.name}`);
+    deleteButton.title = `Apagar ${category.name}`;
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-trash";
+    icon.setAttribute("aria-hidden", "true");
+    deleteButton.append(icon);
+    deleteButton.addEventListener("click", () => deleteCategory(category, deleteButton));
+    item.append(name, deleteButton);
+    categoryList.append(item);
+  });
+}
+
+async function loadCategories() {
+  if (!hasCurrentUser()) throw new Error("Selecione um cliente válido antes de gerenciar categorias.");
+  categoryListMessage.textContent = "Carregando categorias...";
+  categoryList.replaceChildren();
+  const response = await fetch(`${urlNetixZae}/categories`, {
+    headers: { user_id: id_user },
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(categoryApiError(body, response.status));
+  const values = Array.isArray(body) ? body : body?.categories;
+  if (!Array.isArray(values)) throw new Error("Resposta inválida ao carregar categorias.");
+  const normalized = values.map(normalizeCategory);
+  if (normalized.some((category) => !category)) throw new Error("A API retornou uma categoria sem ID ou nome válido.");
+  categories = normalized
+    .map((category, index) => ({ ...category, index }))
+    .sort((first, second) => first.order - second.order || first.index - second.index)
+    .map(({ index, ...category }) => category);
+  renderCategories();
+  updateProductCategorySelects();
+  return categories;
+}
+
+function closeCategoryManager() {
+  categoryManager.classList.remove("is-open");
+  categoryManager.setAttribute("aria-hidden", "true");
+}
+
+if (addProduto && manageCategoriesButton && hasCurrentUser()) {
+  addProduto.disabled = false;
+  manageCategoriesButton.disabled = false;
+}
+
+if (manageCategoriesButton && categoryManager) manageCategoriesButton.addEventListener("click", async () => {
+  if (!hasCurrentUser()) return;
+  categoryManager.classList.add("is-open");
+  categoryManager.setAttribute("aria-hidden", "false");
+  categoryFormMessage.textContent = "";
+  try {
+    await loadCategories();
+  } catch (error) {
+    categoryListMessage.textContent = `Não foi possível carregar as categorias: ${error.message}`;
+  }
+});
+
+const closeCategoryManagerButton = document.querySelector(".category-manager-close");
+if (closeCategoryManagerButton) closeCategoryManagerButton.addEventListener("click", closeCategoryManager);
+
+if (categoryCreateForm) categoryCreateForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const name = document.getElementById("category-name").value.trim();
+  if (!name) {
+    categoryFormMessage.textContent = "Informe o nome da categoria.";
+    return;
+  }
+  if (!hasCurrentUser()) {
+    categoryFormMessage.textContent = "Cliente inválido. Entre novamente para continuar.";
+    return;
+  }
+
+  categoryCreateButton.disabled = true;
+  categoryFormMessage.textContent = "Criando categoria...";
+  const previousIds = new Set(categories.map((category) => category.id));
+  try {
+    const response = await fetch(`${urlNetixZae}/categories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", user_id: id_user },
+      body: JSON.stringify({ nome: name, ordem: categories.length }),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(categoryApiError(body, response.status));
+    await loadCategories();
+    const returnedCategory = normalizeCategory(body?.category ?? body);
+    const createdCategory = (returnedCategory && categories.find((category) => category.id === returnedCategory.id)) ||
+      categories.find((category) => category.name === name && !previousIds.has(category.id));
+    if (!createdCategory) throw new Error("A API não confirmou o ID da categoria criada. Verifique a resposta do backend.");
+    pendingProductCategoryId = createdCategory.id;
+    document.getElementById("category-name").value = "";
+    closeCategoryManager();
+    document.querySelector(".category-feedback").textContent = `Categoria “${createdCategory.name}” criada com sucesso.`;
+    mostrarSucesso(`Categoria “${createdCategory.name}” criada com sucesso!`);
+  } catch (error) {
+    categoryFormMessage.textContent = `Não foi possível criar a categoria: ${error.message}`;
+  } finally {
+    categoryCreateButton.disabled = false;
+  }
+});
+
+async function deleteCategory(category, button) {
+  if (!hasCurrentUser()) return;
+  if (!window.confirm(`Apagar a categoria “${category.name}”?`)) return;
+  button.disabled = true;
+  categoryFormMessage.textContent = `Apagando “${category.name}”...`;
+  try {
+    const response = await fetch(`${urlNetixZae}/categories/${encodeURIComponent(category.id)}`, {
+      method: "DELETE",
+      headers: { user_id: id_user },
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(categoryApiError(body, response.status));
+    categories = categories.filter((item) => item.id !== category.id);
+    if (pendingProductCategoryId === category.id) pendingProductCategoryId = "";
+    updateProductCategorySelects();
+    renderCategories();
+    closeCategoryManager();
+    mostrarSucesso(`Categoria “${category.name}” apagada com sucesso!`);
+  } catch (error) {
+    button.disabled = false;
+    categoryFormMessage.textContent = `Não foi possível apagar a categoria: ${error.message}`;
+  }
+}
 
 if (addProduto && newConteiner) {
-  addProduto.addEventListener("click", function () {
+  addProduto.addEventListener("click", async function () {
+    if (!hasCurrentUser()) return;
+    document.querySelector(".new-product-message").textContent = "";
+    populateCategorySelect(document.getElementById("new-category"), pendingProductCategoryId);
     newConteiner.style = "display: flex;";
+    try {
+      await loadCategories();
+      populateCategorySelect(document.getElementById("new-category"), pendingProductCategoryId);
+    } catch (error) {
+      const message = document.querySelector(".new-product-message");
+      message.textContent = `Não foi possível carregar as categorias: ${error.message}`;
+      message.classList.add("is-visible");
+    }
   });
 }
 
@@ -693,6 +968,7 @@ async function novoProduto() {
         price: newValor,
         status: true,
         thumbnail: imageUrl,
+        categoriaId: document.getElementById("new-category").value || null,
       }),
     });
 
@@ -703,9 +979,8 @@ async function novoProduto() {
     const newConteiner = document.querySelector(".new-conteiner");
     newConteiner.style.display = "none";
     localStorage.removeItem(`products:${id_user}`);
-    mensagem.textContent = "Produto criado com sucesso!";
-    sucess.style = "display:flex";
     await fetchProducts();
+    mostrarSucesso("Produto criado com sucesso!");
   } catch (error) {
     console.error("Erro na criação:", error);
     formMessage.textContent = `Não foi possível criar o produto: ${error.message}`;
