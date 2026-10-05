@@ -188,21 +188,24 @@
       </div>
     </main>
       <main class="new-conteiner">
-      <div class="form-new">
-        <i class="fa-solid fa-xmark closeNew"></i>
+      <div class="form-new" role="dialog" aria-modal="true" aria-labelledby="new-product-title">
+        <button class="closeNew" type="button" aria-label="Fechar cadastro de produto" title="Fechar">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <h2 id="new-product-title">Adicionar produto</h2>
         <p class="new-product-message" aria-live="polite"></p>
         <label for="new-nome">Nome do produto</label>
-        <input type="text" id="new-nome" >
+        <input type="text" id="new-nome" required />
         <label for="new-description2">Descrição complementar</label>
         <textarea id="new-description2" rows="3" placeholder="Ex.: ingredientes, tamanho ou detalhes do produto"></textarea>
         <label for="new-valor">Valor</label>
-        <input type="number" name="valor" id="new-valor">
+        <input type="number" name="valor" id="new-valor" min="0" step="0.01" required />
         <label for="new-category">Categoria</label>
         <select id="new-category" name="categoriaId">
           <option value="">Sem categoria</option>
         </select>
-      <label for="linkImg">Imagem do produto</label>
-      <input type="file" id="linkImg" accept="image/*">
+        <label for="linkImg">Imagem do produto</label>
+        <input type="file" id="linkImg" accept="image/*" required />
         <button class="new-produto">Criar produto</button>
       </div>
     </main>

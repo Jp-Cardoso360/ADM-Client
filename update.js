@@ -162,14 +162,26 @@ if (openCompanySettingsButton && companySettings) {
     fillCompanySettings(empresaAtual);
     companySettings.classList.add("is-open");
     companySettings.setAttribute("aria-hidden", "false");
+    document.getElementById("company-name").focus();
   });
 }
 
 const closeCompanySettingsButton = document.querySelector(".company-settings-close");
+function closeCompanySettingsModal() {
+  companySettings.classList.remove("is-open");
+  companySettings.setAttribute("aria-hidden", "true");
+  openCompanySettingsButton?.focus();
+}
+
 if (closeCompanySettingsButton && companySettings) {
-  closeCompanySettingsButton.addEventListener("click", () => {
-    companySettings.classList.remove("is-open");
-    companySettings.setAttribute("aria-hidden", "true");
+  closeCompanySettingsButton.addEventListener("click", closeCompanySettingsModal);
+  companySettings.addEventListener("click", (event) => {
+    if (event.target === companySettings) closeCompanySettingsModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && companySettings.classList.contains("is-open")) {
+      closeCompanySettingsModal();
+    }
   });
 }
 
@@ -1245,7 +1257,9 @@ if (addProduto && newConteiner) {
     if (!hasCurrentUser()) return;
     document.querySelector(".new-product-message").textContent = "";
     populateCategorySelect(document.getElementById("new-category"), pendingProductCategoryId);
-    newConteiner.style = "display: flex;";
+    newConteiner.style.display = "flex";
+    newConteiner.setAttribute("aria-hidden", "false");
+    document.getElementById("new-nome").focus();
     try {
       await loadCategories();
       populateCategorySelect(document.getElementById("new-category"), pendingProductCategoryId);
@@ -1266,9 +1280,21 @@ if (criarButton) {
 
 const closeNew = document.querySelector(".closeNew");
 
+function closeNewProductModal() {
+  newConteiner.style.display = "none";
+  newConteiner.setAttribute("aria-hidden", "true");
+  addProduto?.focus();
+}
+
 if (closeNew && newConteiner) {
-  closeNew.addEventListener("click", function () {
-    newConteiner.style = "display: none;";
+  closeNew.addEventListener("click", closeNewProductModal);
+  newConteiner.addEventListener("click", (event) => {
+    if (event.target === newConteiner) closeNewProductModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && newConteiner.style.display === "flex") {
+      closeNewProductModal();
+    }
   });
 }
 
@@ -1327,8 +1353,7 @@ async function novoProduto() {
       throw new Error(`Erro na API: ${reqNew.status}`);
     }
 
-    const newConteiner = document.querySelector(".new-conteiner");
-    newConteiner.style.display = "none";
+    closeNewProductModal();
     localStorage.removeItem(`products:${id_user}`);
     await fetchProducts();
     mostrarSucesso("Produto criado com sucesso!");

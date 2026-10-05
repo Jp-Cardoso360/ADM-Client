@@ -457,18 +457,41 @@ body{
   top: 10px;
   font-size: 1.5rem;
 }
-.form-new input,label,button{
-  width: 70%;
-  font-size: 1.1rem;
-  margin: 5px;
+.form-new > label {
+  width: 100%;
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
-.form-new input{
-padding: 10px;
+.form-new > input,
+.form-new > textarea,
+.form-new > select {
+  width: 100%;
+  margin: 0;
+  font: inherit;
+}
+.form-new > input:not([type="file"]) {
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--text-color);
+}
+.form-new > input[type="file"] {
+  min-height: 44px;
+  padding: 8px;
+  border: 1px dashed #b8c7bf;
+  border-radius: 7px;
+  background: #f8faf9;
+  color: var(--muted-color);
+  font-size: 0.9rem;
 }
 .form-new textarea {
-  width: 70%;
+  width: 100%;
   min-height: 88px;
-  margin: 5px;
+  margin: 0;
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 7px;
@@ -477,8 +500,8 @@ padding: 10px;
 }
 .new-product-message {
   display: none;
-  width: 70%;
-  margin: 8px auto;
+  width: 100%;
+  margin: 0;
   color: #9c2c2c;
   font-size: 0.92rem;
   line-height: 1.4;
@@ -508,12 +531,47 @@ padding: 10px;
   opacity: 0.65;
 }
 
-.form-new button{
-  padding: 15px;
-  margin: 20px;
-  background-color: green;
+.form-new > h2 {
+  align-self: flex-start;
+  margin: 0 44px 8px 0;
+  color: var(--text-color);
+  font-size: 1.35rem;
+}
+
+.closeNew {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--text-color);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.form-new > .new-produto {
+  width: 100%;
+  min-height: 46px;
+  margin: 8px 0 0;
+  padding: 12px 16px;
   border: 0;
-  color: white;
+  border-radius: 7px;
+  background: var(--system-primary-color);
+  color: #ffffff;
+  font: 600 1rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.form-new > .new-produto:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 :root {
@@ -681,6 +739,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.company-settings-form .company-settings-save {
+  width: 100%;
 }
 
 .company-settings-form label {
@@ -1441,7 +1503,7 @@ body {
 
 .product button,
 .att-produtos,
-.form-new button {
+.form-new .new-produto {
   border: 0;
   border-radius: 7px;
   background: var(--system-primary-color);
@@ -1453,7 +1515,7 @@ body {
 
 .product button:hover,
 .att-produtos:hover,
-.form-new button:hover {
+.form-new .new-produto:hover {
   filter: brightness(0.92);
   transform: translateY(-1px);
 }
@@ -1577,12 +1639,18 @@ body {
 .form input:focus,
 .form textarea:focus,
 .form select:focus,
-.form-new input:focus,
+.form-new > input:focus,
 .form-new textarea:focus,
 .form-new select:focus {
   outline: 2px solid var(--system-primary-color);
   outline-offset: 2px;
   border-color: var(--system-primary-color);
+}
+
+.form-new > input:focus,
+.form-new > textarea:focus {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 2px;
 }
 
 .att-produtos {
@@ -1705,6 +1773,10 @@ body {
     max-height: 85dvh;
     padding: 20px 14px 18px;
     border-radius: 10px;
+  }
+
+  .form-new {
+    gap: 8px;
   }
 
   .product-edit-button:focus-visible {
