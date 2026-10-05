@@ -32,10 +32,14 @@
           <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
         </button>
       </div>
+       <button class="manage-places" type="button" aria-haspopup="dialog" aria-controls="modal-lugares" disabled>
+        <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+      </button>
       <button class="edit-company" type="button" aria-label="Configurações da empresa" title="Configurações da empresa">
         <i class="fa-solid fa-gear" aria-hidden="true"></i>
       
       </button>
+     
 </main>
     <section class="company-settings" aria-hidden="true">
       <div class="company-settings-panel" role="dialog" aria-modal="true" aria-labelledby="company-settings-title">
@@ -80,6 +84,49 @@
         </form>
       </div>
     </section>
+    <div id="modal-lugares" aria-hidden="true">
+      <section class="lugares-dialog" role="dialog" aria-modal="true" aria-labelledby="lugares-title">
+        <button class="lugares-close" type="button" aria-label="Fechar gestão de bairros e taxas" title="Fechar">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <header class="lugares-header">
+          <span class="lugares-eyebrow">ENTREGA</span>
+          <h2 id="lugares-title">Bairros e taxas</h2>
+          <p>Defina os locais atendidos e o valor da entrega.</p>
+        </header>
+        <form id="form-lugar" class="lugares-form">
+          <p id="lugares-feedback" class="lugares-feedback" role="status" aria-live="polite"></p>
+          <div class="lugares-form-fields">
+            <div class="lugar-field lugar-name-field">
+              <label for="lugar-name">Nome do bairro</label>
+              <input type="text" id="lugar-name" name="name" maxlength="100" autocomplete="off" required />
+            </div>
+            <div class="lugar-field lugar-fee-field">
+              <label for="lugar-fee">Taxa de entrega</label>
+              <div class="lugar-fee-input">
+                <span aria-hidden="true">R$</span>
+                <input type="number" id="lugar-fee" name="fee" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required />
+              </div>
+            </div>
+            <div class="lugares-form-actions">
+              <button id="lugar-submit" class="lugar-submit" type="submit">Adicionar bairro</button>
+              <button id="lugar-cancel-edit" class="lugar-cancel-edit" type="button" hidden>Cancelar edição</button>
+            </div>
+          </div>
+        </form>
+        <section class="lugares-results" aria-labelledby="lugares-list-title">
+          <div class="lugares-list-heading">
+            <h3 id="lugares-list-title">Locais cadastrados</h3>
+            <span id="lugares-count" class="lugares-count">0</span>
+          </div>
+          <p id="lugares-list-feedback" class="lugares-list-feedback" role="status" aria-live="polite"></p>
+          <ul id="lista-lugares" class="lista-lugares"></ul>
+        </section>
+        <footer class="lugares-footer">
+          <button class="lugares-cancel" type="button">Fechar</button>
+        </footer>
+      </section>
+    </div>
     <main class="contagem">
       <p class="disponivel"></p>
       <p class="pausados"></p>

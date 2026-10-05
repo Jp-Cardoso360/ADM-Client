@@ -575,7 +575,8 @@ body {
 .meuSistema,
 .add-product,
 .manage-categories,
-.edit-company {
+.edit-company,
+.manage-places {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -586,7 +587,7 @@ body {
   padding: 0 14px;
   gap: 9px;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(23, 34, 30, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.719);
   cursor: pointer;
   transition: transform 150ms ease, filter 150ms ease;
   font: 600 0.92rem "Roboto", sans-serif;
@@ -605,6 +606,27 @@ body {
 
 .edit-company .fa-gear {
   font-size: 1.2rem;
+}
+
+.manage-places {
+  border: 0;
+  background: #176b55;
+  color: #ffffff;
+}
+
+.manage-places:hover {
+  background: #125541;
+  transform: translateY(-1px);
+}
+
+.manage-places:focus-visible {
+  outline: 3px solid var(--system-primary-color);
+  outline-offset: 3px;
+}
+
+.manage-places:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .company-settings {
@@ -809,6 +831,289 @@ body {
 
 .category-manager.is-open {
   display: flex;
+}
+
+#modal-lugares {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 16px;
+  background: rgba(14, 24, 19, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.lugares-dialog {
+  position: relative;
+  width: min(100%, 620px);
+  max-height: min(92vh, 820px);
+  overflow-y: auto;
+  padding: 30px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--surface-color);
+  box-shadow: 0 24px 70px rgba(14, 24, 19, 0.3);
+}
+
+.lugares-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.lugares-header {
+  margin: 0 44px 22px 0;
+}
+
+.lugares-eyebrow {
+  color: #28784c;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.lugares-header h2 {
+  margin: 5px 0 4px;
+  font-size: 1.55rem;
+}
+
+.lugares-header p {
+  margin: 0;
+  color: var(--muted-color);
+}
+
+.lugares-feedback,
+.lugares-list-feedback {
+  min-height: 1.35em;
+  margin: 8px 0;
+  color: var(--muted-color);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.lugares-feedback[data-state="error"] {
+  color: #a7352b;
+}
+
+.lugares-form {
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #f8faf9;
+}
+
+.lugares-form-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.55fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.lugar-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lugar-field label {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.lugar-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #cbd7d1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--text-color);
+  font: inherit;
+}
+
+.lugar-field input:focus {
+  border-color: var(--system-primary-color);
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 2px;
+}
+
+.lugar-fee-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding-left: 12px;
+  border: 1px solid #cbd7d1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--muted-color);
+}
+
+.lugar-fee-input input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: 0;
+}
+
+.lugar-fee-input:focus-within {
+  border-color: var(--system-primary-color);
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 2px;
+}
+
+.lugares-form-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+
+.lugar-submit,
+.lugar-cancel-edit,
+.lugares-cancel {
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 7px;
+  font: 600 0.95rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.lugar-submit {
+  background: var(--system-primary-color);
+  color: #ffffff;
+}
+
+.lugar-cancel-edit,
+.lugares-cancel {
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-color);
+}
+
+.lugar-submit:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.lugares-results {
+  margin-top: 24px;
+}
+
+.lugares-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lugares-list-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.lugares-count {
+  display: grid;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  place-items: center;
+  border-radius: 14px;
+  background: #e8eeeb;
+  color: #34483d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.lista-lugares {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lugar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.lugar-details {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.lugar-row-name {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.lugar-row-fee {
+  color: var(--muted-color);
+  font-size: 0.9rem;
+}
+
+.lugar-row-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.lugar-edit-button,
+.lugar-delete-button {
+  min-height: 38px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-color);
+  font: 600 0.85rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.lugar-delete-button {
+  border-color: #f1d0cc;
+  background: #fff5f3;
+  color: #9e352b;
+}
+
+.lugar-edit-button:disabled,
+.lugar-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.lugares-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.lugares-cancel {
+  min-width: 100px;
 }
 
 .category-manager-panel {
@@ -1173,9 +1478,7 @@ body {
   backdrop-filter: blur(3px);
 }
 
-.edit,
-.new-conteiner,
-.company-settings {
+.edit {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -1189,6 +1492,18 @@ body {
   backdrop-filter: none;
 }
 
+.new-conteiner,
+.company-settings {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: none;
+}
+
 .content-edit,
 .form-new,
 .ok,
@@ -1198,17 +1513,31 @@ body {
   box-shadow: 0 18px 50px rgba(14, 24, 19, 0.2);
 }
 
-.content-edit,
+.content-edit {
+  width: min(100%, 560px);
+  max-height: min(92vh, 760px);
+  max-height: min(92dvh, 760px);
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--surface-color);
+  box-shadow: 0 18px 50px rgba(14, 24, 19, 0.2);
+}
+
 .form-new,
 .company-settings-panel {
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
+  position: relative;
+  width: min(100%, 520px);
+  max-width: 520px;
+  height: auto;
+  max-height: min(92vh, 760px);
+  max-height: min(92dvh, 760px);
   overflow-y: auto;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  padding: 28px 24px 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--surface-color);
+  box-shadow: 0 18px 50px rgba(14, 24, 19, 0.2);
 }
 
 .form input {
@@ -1327,8 +1656,55 @@ body {
     font-size: 1rem;
   }
 
+  .manage-places {
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  #modal-lugares {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .lugares-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 24px 16px;
+  }
+
+  .lugares-form {
+    padding: 14px;
+  }
+
+  .lugares-form-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lugares-form-actions {
+    grid-column: 1;
+    flex-wrap: wrap;
+  }
+
+  .lugares-form-actions button {
+    flex: 1 1 140px;
+  }
+
+  .lugar-row {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
   .category-manager-panel {
     padding: 24px 16px 18px;
+  }
+
+  .form-new,
+  .company-settings-panel {
+    width: calc(100% - 8px);
+    max-height: 85vh;
+    max-height: 85dvh;
+    padding: 20px 14px 18px;
+    border-radius: 10px;
   }
 
   .product-edit-button:focus-visible {

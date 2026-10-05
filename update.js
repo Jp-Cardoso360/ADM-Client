@@ -713,8 +713,20 @@ const categoryOrderSaveButton = document.querySelector(".category-order-save");
 const categoryCreateButton = document.querySelector(".category-create-button");
 const categoryCreateForm = document.querySelector(".category-create-form");
 const manageCategoriesButton = document.querySelector(".manage-categories");
+const managePlacesButton = document.querySelector(".manage-places");
 let categoryOrderDirty = false;
 let isSavingCategoryOrder = false;
+const placesModal = document.getElementById("modal-lugares");
+const placesForm = document.getElementById("form-lugar");
+const placesFeedback = document.getElementById("lugares-feedback");
+const placesListFeedback = document.getElementById("lugares-list-feedback");
+const placesList = document.getElementById("lista-lugares");
+const placesCount = document.getElementById("lugares-count");
+const placeSubmitButton = document.getElementById("lugar-submit");
+const cancelPlaceEditButton = document.getElementById("lugar-cancel-edit");
+let places = [];
+let editingPlaceId = null;
+let isSavingPlace = false;
 
 function hasCurrentUser() {
   return Boolean(id_user && id_user !== "null" && id_user !== "undefined");
@@ -876,6 +888,7 @@ function closeCategoryManager() {
 if (addProduto && manageCategoriesButton && hasCurrentUser()) {
   addProduto.disabled = false;
   manageCategoriesButton.disabled = false;
+  if (managePlacesButton) managePlacesButton.disabled = false;
 }
 
 if (manageCategoriesButton && categoryManager) manageCategoriesButton.addEventListener("click", async () => {
@@ -997,6 +1010,234 @@ async function deleteCategory(category, button) {
     button.disabled = false;
     categoryFormMessage.textContent = `Não foi possível apagar a categoria: ${error.message}`;
   }
+}
+
+function normalizePlace(value) {
+  if (!value || typeof value !== "object") return null;
+  const id = value._id ?? value.id;
+  const name = typeof value.name === "string" ? value.name.trim() : "";
+  const fee = Number(value.fee);
+  if (id === undefined || id === null || !name || !Number.isFinite(fee) || fee < 0) return null;
+  return { id: String(id), name, fee };
+}
+
+function formatDeliveryFee(fee) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(fee);
+}
+
+function setPlacesFeedback(message, state = "") {
+  placesFeedback.textContent = message;
+  placesFeedback.dataset.state = state;
+}
+
+function resetPlaceForm() {
+  editingPlaceId = null;
+  placesForm.reset();
+  placeSubmitButton.textContent = "Adicionar bairro";
+  cancelPlaceEditButton.hidden = true;
+  setPlacesFeedback("");
+}
+
+function closePlacesModal() {
+  placesModal.style.display = "none";
+  placesModal.setAttribute("aria-hidden", "true");
+  resetPlaceForm();
+  if (managePlacesButton) managePlacesButton.focus();
+}
+
+function renderPlaces() {
+  placesList.replaceChildren();
+  placesCount.textContent = String(places.length);
+
+  if (!places.length) {
+    placesListFeedback.textContent = "Nenhum bairro cadastrado. Adicione o primeiro acima.";
+    return;
+  }
+
+  placesListFeedback.textContent = "";
+  places.forEach((place) => {
+    const item = document.createElement("li");
+    item.className = "lugar-row";
+
+    const details = document.createElement("div");
+    details.className = "lugar-details";
+    const name = document.createElement("span");
+    name.className = "lugar-row-name";
+    name.textContent = place.name;
+    const fee = document.createElement("span");
+    fee.className = "lugar-row-fee";
+    fee.textContent = formatDeliveryFee(place.fee);
+    details.append(name, fee);
+
+    const actions = document.createElement("div");
+    actions.className = "lugar-row-actions";
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "lugar-edit-button";
+    editButton.textContent = "Editar";
+    editButton.disabled = isSavingPlace;
+    editButton.addEventListener("click", () => beginPlaceEdit(place));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "lugar-delete-button";
+    deleteButton.textContent = "Apagar";
+    deleteButton.disabled = isSavingPlace;
+    deleteButton.addEventListener("click", () => deletePlace(place));
+
+    actions.append(editButton, deleteButton);
+    item.append(details, actions);
+    placesList.append(item);
+  });
+}
+
+async function loadPlaces() {
+  if (!hasCurrentUser()) throw new Error("Cliente inválido. Entre novamente para continuar.");
+  placesListFeedback.textContent = "Carregando bairros...";
+  placesList.replaceChildren();
+
+  const response = await fetch(`${urlNetixZae}/lugares`, {
+    headers: { user_id: id_user },
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(categoryApiError(body, response.status));
+
+  const values = Array.isArray(body) ? body : body?.lugares;
+  if (!Array.isArray(values)) throw new Error("A API retornou uma lista de bairros inválida.");
+  const normalized = values.map(normalizePlace);
+  if (normalized.some((place) => !place)) throw new Error("A API retornou um bairro com dados inválidos.");
+
+  places = normalized;
+  renderPlaces();
+}
+
+function beginPlaceEdit(place) {
+  editingPlaceId = place.id;
+  document.getElementById("lugar-name").value = place.name;
+  document.getElementById("lugar-fee").value = place.fee.toFixed(2);
+  placeSubmitButton.textContent = "Salvar alterações";
+  cancelPlaceEditButton.hidden = false;
+  setPlacesFeedback(`Editando ${place.name}.`);
+  document.getElementById("lugar-name").focus();
+}
+
+if (placesForm && placesModal) {
+  placesForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (isSavingPlace) return;
+
+    const name = document.getElementById("lugar-name").value.trim();
+    const feeValue = document.getElementById("lugar-fee").value;
+    const fee = Number(feeValue);
+    if (!name) {
+      setPlacesFeedback("Informe o nome do bairro.", "error");
+      document.getElementById("lugar-name").focus();
+      return;
+    }
+    if (!feeValue || !Number.isFinite(fee) || fee < 0) {
+      setPlacesFeedback("Informe uma taxa válida, igual ou maior que zero.", "error");
+      document.getElementById("lugar-fee").focus();
+      return;
+    }
+    if (!hasCurrentUser()) {
+      setPlacesFeedback("Cliente inválido. Entre novamente para continuar.", "error");
+      return;
+    }
+
+    const wasEditing = Boolean(editingPlaceId);
+    const placeId = editingPlaceId;
+    isSavingPlace = true;
+    placeSubmitButton.disabled = true;
+    setPlacesFeedback(wasEditing ? "Salvando alterações..." : "Adicionando bairro...");
+    renderPlaces();
+
+    try {
+      const response = await fetch(
+        wasEditing ? `${urlNetixZae}/lugares/${encodeURIComponent(placeId)}` : `${urlNetixZae}/lugares`,
+        {
+          method: wasEditing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json", user_id: id_user },
+          body: JSON.stringify({ name, fee }),
+        }
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(categoryApiError(body, response.status));
+
+      const savedPlace = normalizePlace(body?.lugar ?? body);
+      if (!savedPlace || (wasEditing && savedPlace.id !== placeId)) {
+        throw new Error("A API não confirmou os dados do bairro salvo.");
+      }
+
+      places = wasEditing
+        ? places.map((place) => (place.id === savedPlace.id ? savedPlace : place))
+        : [...places, savedPlace];
+      renderPlaces();
+      closePlacesModal();
+      mostrarSucesso(wasEditing ? "Bairro atualizado com sucesso!" : "Bairro adicionado com sucesso!");
+    } catch (error) {
+      setPlacesFeedback(`Não foi possível salvar o bairro: ${error.message}`, "error");
+      renderPlaces();
+    } finally {
+      isSavingPlace = false;
+      placeSubmitButton.disabled = false;
+      renderPlaces();
+    }
+  });
+}
+
+async function deletePlace(place) {
+  if (!hasCurrentUser() || isSavingPlace) return;
+  if (!window.confirm(`Apagar o bairro “${place.name}” e sua taxa de entrega?`)) return;
+
+  isSavingPlace = true;
+  setPlacesFeedback(`Apagando ${place.name}...`);
+  renderPlaces();
+  try {
+    const response = await fetch(`${urlNetixZae}/lugares/${encodeURIComponent(place.id)}`, {
+      method: "DELETE",
+      headers: { user_id: id_user },
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(categoryApiError(body, response.status));
+
+    places = places.filter((item) => item.id !== place.id);
+    renderPlaces();
+    closePlacesModal();
+    mostrarSucesso(`Bairro “${place.name}” apagado com sucesso!`);
+  } catch (error) {
+    setPlacesFeedback(`Não foi possível apagar o bairro: ${error.message}`, "error");
+  } finally {
+    isSavingPlace = false;
+    renderPlaces();
+  }
+}
+
+if (managePlacesButton && placesModal) {
+  managePlacesButton.addEventListener("click", async () => {
+    if (!hasCurrentUser()) return;
+    resetPlaceForm();
+    placesModal.style.display = "flex";
+    placesModal.setAttribute("aria-hidden", "false");
+    document.getElementById("lugar-name").focus();
+    try {
+      await loadPlaces();
+    } catch (error) {
+      placesListFeedback.textContent = `Não foi possível carregar os bairros: ${error.message}`;
+    }
+  });
+
+  placesModal.addEventListener("click", (event) => {
+    if (event.target === placesModal) closePlacesModal();
+  });
+
+  document.querySelectorAll(".lugares-close, .lugares-cancel").forEach((button) => {
+    button.addEventListener("click", closePlacesModal);
+  });
+
+  cancelPlaceEditButton.addEventListener("click", resetPlaceForm);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && placesModal.style.display === "flex") closePlacesModal();
+  });
 }
 
 if (addProduto && newConteiner) {
