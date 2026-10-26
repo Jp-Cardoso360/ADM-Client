@@ -343,23 +343,31 @@ const meuSistema = document.querySelector(".meuSistema");
 
 async function abrirMeuCatalogo() {
   try {
-    const resposta = await fetch(`${urlNetixZae}/sessions-list-counts`);
+    const userId = localStorage.getItem("id_user");
+
+    if (!userId) {
+      throw new Error("ID do comerciante não encontrado.");
+    }
+
+    const resposta = await fetch(
+      `${urlNetixZae}/sessions-list-counts`
+    );
 
     if (!resposta.ok) {
-      throw new Error("Erro ao buscar empresas");
+      throw new Error("Erro ao buscar empresas.");
     }
 
     const empresas = await resposta.json();
 
     const minhaEmpresa = empresas.find(
-      empresa => empresa._id === user_id
+      empresa => empresa._id === userId
     );
 
     if (minhaEmpresa?.slug) {
-      meuSistema.href =
+      document.querySelector(".meuSistema").href =
         `https://conectazap-lojas.vercel.app/${minhaEmpresa.slug}`;
     } else {
-      console.error("Slug da empresa não encontrado.");
+      console.error("Empresa ou slug não encontrado.");
     }
   } catch (erro) {
     console.error("Erro ao carregar catálogo:", erro);
@@ -367,6 +375,7 @@ async function abrirMeuCatalogo() {
 }
 
 abrirMeuCatalogo();
+
  
 }
 
