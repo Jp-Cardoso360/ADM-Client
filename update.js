@@ -339,9 +339,35 @@ function renderProducts(products) {
     renderProductGroup(container, category.name, productsByCategory.get(category.id));
   });
   if (uncategorizedProducts.length) renderProductGroup(container, "Sem categoria", uncategorizedProducts);
+const meuSistema = document.querySelector(".meuSistema");
 
-  const meuSistema = document.querySelector(".meuSistema");
-  meuSistema.href = `https://comercio-zap.netlify.app/${id_user}`;
+async function abrirMeuCatalogo() {
+  try {
+    const resposta = await fetch(`${urlNetixZae}/sessions-list-counts`);
+
+    if (!resposta.ok) {
+      throw new Error("Erro ao buscar empresas");
+    }
+
+    const empresas = await resposta.json();
+
+    const minhaEmpresa = empresas.find(
+      empresa => empresa._id === user_id
+    );
+
+    if (minhaEmpresa?.slug) {
+      meuSistema.href =
+        `https://conectazap-lojas.vercel.app/${minhaEmpresa.slug}`;
+    } else {
+      console.error("Slug da empresa não encontrado.");
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar catálogo:", erro);
+  }
+}
+
+abrirMeuCatalogo();
+ 
 }
 
 function renderProductGroup(container, title, products) {
