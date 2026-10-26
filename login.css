@@ -9,8 +9,8 @@
 body {
   min-height: 100vh;
   padding: 24px 16px;
-  background-color: #101512;
-  background-image: none;
+ background-image: url(fundo.gif);
+ background-size: cover;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,12 +32,12 @@ input:focus {
 
 .login-intro h1 {
   margin-bottom: 7px;
-  color: #f2f6f3;
+  color: black;
   font-size: 1.6rem;
 }
 
 .login-intro p {
-  color: #aab7af;
+  color: black;
   font-size: 0.95rem;
   line-height: 1.5;
 }
@@ -60,14 +60,14 @@ a:hover {
   text-align: center;
   justify-content: center;
   position: relative;
-  background-color: #25d366;
+  background-color: white;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
 }
 
 .logo {
   display: block;
   width: min(220px, 80%);
-  max-height: 96px;
+  max-height: 206px;
   margin: 0 auto;
   object-fit: contain;
 }
