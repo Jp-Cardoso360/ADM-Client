@@ -2522,50 +2522,53 @@ body.company-settings-active {
 
 .company-settings,
 .company-settings-panel {
-  background: #f7f8f7;
+  background: #ffffff;
 }
 
 .company-settings-header {
-  min-height: 84px;
-  padding: 16px max(24px, calc((100vw - 1180px) / 2));
-  border-bottom: 1px solid #e4e8e5;
+  min-height: 58px;
+  justify-content: flex-end;
+  padding: 8px max(20px, calc((100vw - 920px) / 2));
+  border-bottom: 1px solid #e7e7e7;
   background: #ffffff;
-  color: #26332b;
-}
-
-.company-settings-header h2 {
-  font-size: 1.35rem;
-  font-weight: 650;
-  letter-spacing: 0;
 }
 
 .company-settings-close {
-  border-color: #e1e6e2;
+  flex-basis: 38px;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
   background: #ffffff;
-  color: #48554c;
+  color: #333333;
 }
 
 .company-settings-close:hover {
-  background: #f0f3f1;
+  background: #f5f5f5;
   transform: none;
 }
 
 .company-settings-close:focus-visible,
 .company-settings-save:focus-visible,
 .company-file-button:focus-visible {
-  outline-color: #7a9a83;
+  outline-color: #555555;
 }
 
 .company-settings-layout {
-  width: min(100%, 1180px);
-  gap: 16px;
-  padding-top: 18px;
+  display: flex;
+  width: min(100%, 920px);
+  flex-direction: column;
+  gap: 0;
+  padding: 8px 24px 24px;
 }
 
 .company-settings-card {
-  padding: 20px;
-  border-color: #e4e8e5;
-  border-radius: 10px;
+  padding: 20px 0;
+  border: 0;
+  border-bottom: 1px solid #e7e7e7;
+  border-radius: 0;
+  background: #ffffff;
   box-shadow: none;
 }
 
@@ -2574,76 +2577,130 @@ body.company-settings-active {
 }
 
 .company-settings-card-header h3 {
-  color: #303b33;
+  color: #252525;
   font-size: 1rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
-.company-settings-card-header p {
-  display: none;
-}
-
+.company-settings-card-header p,
 .company-settings-card-icon {
   display: none;
 }
 
+.company-identity-content {
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 22px;
+}
+
 .company-logo-preview-wrap {
-  border-color: #ffffff;
-  background: #f0f2f0;
-  box-shadow: 0 0 0 1px #e1e5e2;
+  border: 1px solid #e5e5e5;
+  background: #f5f5f5;
+  box-shadow: none;
 }
 
 .company-file-button {
-  border-color: #d9dfda;
+  border-color: #d8d8d8;
   background: #ffffff;
-  color: #35443a;
-  font-weight: 600;
+  color: #333333;
+  font-weight: 500;
 }
 
 .company-file-button:hover {
-  border-color: #bdc9c0;
-  background: #f6f8f6;
+  border-color: #aaaaaa;
+  background: #f7f7f7;
 }
 
-.company-settings-form .company-settings-save {
-  background: #285d3b;
-  box-shadow: none;
+.company-settings-form input[type="text"],
+.company-settings-form textarea,
+.company-hours input[type="time"] {
+  border-color: #d8d8d8;
+  border-radius: 5px;
+  background: #ffffff;
 }
 
-.company-settings-form .company-settings-save:hover:not(:disabled) {
-  background: #214d31;
-  transform: none;
+.company-settings-field input:focus,
+.company-settings-field textarea:focus,
+.company-hours input:focus-visible {
+  border-color: #777777;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+.company-settings-form .company-color-control input[type="color"] {
+  border-color: #d8d8d8;
+  border-radius: 5px;
+}
+
+.company-color-control span {
+  display: none;
+}
+
+.company-banner-preview-wrap {
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
+  background: #f7f7f7;
+}
+
+.company-hours-card {
+  border-bottom: 0;
+}
+
+.company-hours-row {
+  border-color: #eeeeee;
+}
+
+.company-hours-day {
+  color: #333333;
+}
+
+.company-hours-day input {
+  accent-color: #555555;
 }
 
 .company-settings-footer {
-  min-height: 70px;
-  justify-content: flex-end;
-  padding-right: max(24px, calc((100vw - 1180px) / 2));
-  padding-left: max(24px, calc((100vw - 1180px) / 2));
+  min-height: 68px;
+  justify-content: center;
+  padding: 10px 24px;
+  border-top: 1px solid #e7e7e7;
+  background: #ffffff;
   box-shadow: none;
+}
+
+.company-settings-form .company-settings-save {
+  width: min(100%, 360px);
+  min-height: 44px;
+  border-radius: 5px;
+  background: #333333;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.company-settings-form .company-settings-save:hover:not(:disabled) {
+  background: #1f1f1f;
+  transform: none;
 }
 
 @media (max-width: 600px) {
   .company-settings-header {
-    min-height: 72px;
-    padding: 12px 16px;
-  }
-
-  .company-settings-header h2 {
-    font-size: 1.15rem;
+    min-height: 52px;
+    padding: 6px 14px;
   }
 
   .company-settings-layout {
-    padding: 12px;
+    padding: 4px 16px 18px;
   }
 
   .company-settings-card {
-    padding: 16px 14px;
+    padding: 16px 0;
+  }
+
+  .company-identity-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .company-settings-footer {
     justify-content: stretch;
-    padding: 10px 14px;
+    padding: 10px 16px;
   }
 
   .company-settings-form .company-settings-save {
