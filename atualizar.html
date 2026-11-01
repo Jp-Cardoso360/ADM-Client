@@ -28,6 +28,9 @@
         <button class="manage-categories" type="button" aria-label="Gerenciar categorias" title="Gerenciar categorias" aria-haspopup="dialog" aria-controls="category-manager" disabled>
           <i class="fa-solid fa-tags" aria-hidden="true"></i>
         </button>
+        <button class="manage-addon-groups" type="button" aria-label="Gerenciar grupos de adicionais" title="Meus Grupos de Adicionais" aria-haspopup="dialog" aria-controls="addon-group-manager" disabled>
+          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+        </button>
         <button class="add-product" type="button" aria-label="Adicionar produto" title="Adicionar produto" disabled>
           <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
         </button>
@@ -132,6 +135,83 @@
         </form>
       </div>
     </section>
+    <section class="addon-manager" id="addon-group-manager" aria-hidden="true">
+      <div class="addon-manager-panel" role="dialog" aria-modal="true" aria-labelledby="addon-manager-title">
+        <button class="addon-manager-close" type="button" aria-label="Fechar grupos de adicionais">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <header class="addon-manager-heading">
+          <div>
+            <p class="addon-manager-eyebrow">PERSONALIZE SEUS PRODUTOS</p>
+            <h2 id="addon-manager-title">Meus Grupos de Adicionais</h2>
+            <p>Cadastre grupos reutilizáveis e vincule-os a produtos ou categorias.</p>
+          </div>
+          <button class="addon-new-group" type="button">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            Novo grupo
+          </button>
+        </header>
+        <p class="addon-manager-feedback" role="status" aria-live="polite"></p>
+        <ul class="global-addon-list" aria-label="Grupos cadastrados"></ul>
+
+        <form class="addon-group-form" id="addon-group-form" hidden>
+          <h3 class="addon-editor-title">Novo grupo</h3>
+          <input type="hidden" id="addon-group-id" />
+          <label for="addon-group-title">Título do grupo</label>
+          <input type="text" id="addon-group-title" maxlength="100" placeholder="Ex.: Bordas de Pizza" required />
+          <div class="addon-editor-rules">
+            <label class="addon-editor-checkbox">
+              <input type="checkbox" id="addon-group-required" />
+              Preenchimento obrigatório
+            </label>
+            <label for="addon-group-min">Mínimo de opções
+              <input type="number" id="addon-group-min" min="0" step="1" value="0" required />
+            </label>
+            <label for="addon-group-max">Máximo de opções
+              <input type="number" id="addon-group-max" min="0" step="1" value="1" required />
+            </label>
+          </div>
+          <div class="addon-editor-items-heading">
+            <h4>Itens do grupo</h4>
+            <button class="addon-editor-add-item" type="button">➕ Adicionar item</button>
+          </div>
+          <div class="addon-editor-items"></div>
+          <p class="addon-editor-feedback" role="status" aria-live="polite"></p>
+          <div class="addon-editor-actions">
+            <button class="addon-editor-cancel" type="button">Cancelar</button>
+            <button class="addon-editor-save" type="submit">Salvar grupo</button>
+          </div>
+        </form>
+
+        <section class="addon-bulk-link" aria-labelledby="addon-bulk-link-title">
+          <h3 id="addon-bulk-link-title">🔗 Vincular a Produtos/Categorias</h3>
+          <p>Aplique um grupo existente a uma categoria inteira ou a produtos específicos.</p>
+          <form id="addon-link-form">
+            <label for="addon-link-group">Grupo de adicionais</label>
+            <select id="addon-link-group" required>
+              <option value="">Selecione um grupo</option>
+            </select>
+            <fieldset class="addon-link-modes">
+              <legend>Onde aplicar?</legend>
+              <label><input type="radio" name="addon-link-mode" value="category" checked /> Categoria inteira</label>
+              <label><input type="radio" name="addon-link-mode" value="products" /> Produtos específicos</label>
+            </fieldset>
+            <div class="addon-link-category">
+              <label for="addon-link-category-select">Categoria</label>
+              <select id="addon-link-category-select">
+                <option value="">Selecione uma categoria</option>
+              </select>
+            </div>
+            <div class="addon-link-products" hidden>
+              <p>Selecione os produtos</p>
+              <div class="addon-product-checklist"></div>
+            </div>
+            <p class="addon-link-feedback" role="status" aria-live="polite"></p>
+            <button class="addon-link-submit" type="submit">Vincular grupo</button>
+          </form>
+        </section>
+      </div>
+    </section>
     <div id="modal-lugares" aria-hidden="true">
       <section class="lugares-dialog" role="dialog" aria-modal="true" aria-labelledby="lugares-title">
         <button class="lugares-close" type="button" aria-label="Fechar gestão de bairros e taxas" title="Fechar">
@@ -213,17 +293,11 @@
           <input type="file" id="att-thumbnail" accept="image/*" />
           <p class="image-message" id="att-image-message" aria-live="polite"></p>
 
-          <section class="addons-section" aria-labelledby="att-addons-title">
-            <header class="addons-section-header">
-              <div>
-                <h3 id="att-addons-title">Adicionais e Opcionais do Produto</h3>
-                <p>Crie grupos de opções para personalizar este produto.</p>
-              </div>
-              <button class="add-addon-group" type="button" data-target="att-addon-groups">
-                ➕ Criar Novo Grupo de Adicionais
-              </button>
-            </header>
-            <div class="addon-groups" id="att-addon-groups"></div>
+          <section class="product-addon-selector" aria-labelledby="att-addons-title">
+            <h3 id="att-addons-title">Grupos de Adicionais</h3>
+            <p>Selecione os grupos globais que serão usados neste produto.</p>
+            <p class="product-addon-feedback" id="att-addon-feedback" role="status" aria-live="polite"></p>
+            <div class="product-addon-options" id="att-addon-options"></div>
           </section>
 
           <button class="apagarProduto">
@@ -267,17 +341,11 @@
         </select>
         <label for="linkImg">Imagem do produto</label>
         <input type="file" id="linkImg" accept="image/*" required />
-        <section class="addons-section" aria-labelledby="new-addons-title">
-          <header class="addons-section-header">
-            <div>
-              <h3 id="new-addons-title">Adicionais e Opcionais do Produto</h3>
-              <p>Crie grupos de opções para personalizar este produto.</p>
-            </div>
-            <button class="add-addon-group" type="button" data-target="new-addon-groups">
-              ➕ Criar Novo Grupo de Adicionais
-            </button>
-          </header>
-          <div class="addon-groups" id="new-addon-groups"></div>
+        <section class="product-addon-selector" aria-labelledby="new-addons-title">
+          <h3 id="new-addons-title">Grupos de Adicionais</h3>
+          <p>Selecione os grupos globais que serão usados neste produto.</p>
+          <p class="product-addon-feedback" id="new-addon-feedback" role="status" aria-live="polite"></p>
+          <div class="product-addon-options" id="new-addon-options"></div>
         </section>
         <button class="new-produto">Criar produto</button>
       </div>

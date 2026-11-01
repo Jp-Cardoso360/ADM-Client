@@ -633,6 +633,7 @@ body {
 .meuSistema,
 .add-product,
 .manage-categories,
+.manage-addon-groups,
 .edit-company,
 .manage-places {
   display: inline-flex;
@@ -962,7 +963,14 @@ body {
   color: var(--text-color);
 }
 
+.manage-addon-groups {
+  border: 1px solid #b9d9c7;
+  background: #eaf7ef;
+  color: #176b3e;
+}
+
 .manage-categories:disabled,
+.manage-addon-groups:disabled,
 .add-product:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -970,14 +978,16 @@ body {
 
 .meuSistema:hover,
 .add-product:hover,
-.manage-categories:hover {
+.manage-categories:hover,
+.manage-addon-groups:hover {
   filter: brightness(0.95);
   transform: translateY(-1px);
 }
 
 .meuSistema:focus-visible,
 .add-product:focus-visible,
-.manage-categories:focus-visible {
+.manage-categories:focus-visible,
+.manage-addon-groups:focus-visible {
   outline: 3px solid var(--text-color);
   outline-offset: 3px;
 }
@@ -1641,7 +1651,7 @@ body {
   background: #25332c;
 }
 
-.addons-section {
+.product-addon-selector {
   width: 100%;
   margin: 12px 0;
   padding: 16px;
@@ -1650,196 +1660,503 @@ body {
   background: #f8faf9;
 }
 
-.addons-section-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.addons-section-header h3 {
+.product-addon-selector h3 {
   margin: 0;
   color: var(--text-color);
   font-size: 1rem;
 }
 
-.addons-section-header p {
+.product-addon-selector > p:not(.product-addon-feedback) {
   margin: 5px 0 0;
   color: var(--muted-color);
   font-size: 0.85rem;
 }
 
-.add-addon-group,
-.addon-add-item {
-  min-height: 38px;
-  padding: 8px 11px;
-  border: 1px solid #b9d9c7;
-  border-radius: 7px;
-  background: #eaf7ef;
-  color: #176b3e;
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+.product-addon-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.product-addon-option,
+.addon-product-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
   cursor: pointer;
 }
 
-.addon-groups {
-  display: grid;
-  gap: 12px;
+.form .product-addon-option,
+.form-new .product-addon-option {
+  width: 100%;
+  margin: 0;
 }
 
-.addon-group {
+.product-addon-option input,
+.addon-product-option input,
+.addon-editor-checkbox input,
+.addon-link-modes input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--system-primary-color);
+}
+
+.form .product-addon-option input,
+.form-new .product-addon-option input {
+  width: 18px;
+  margin: 0;
+}
+
+.product-addon-option span {
+  display: grid;
+  gap: 3px;
   min-width: 0;
+}
+
+.product-addon-option strong {
+  color: var(--text-color);
+  font-size: 0.9rem;
+}
+
+.product-addon-option small {
+  color: var(--muted-color);
+}
+
+.product-addon-feedback,
+.addon-selector-empty {
+  color: var(--muted-color);
+  font-size: 0.85rem;
+}
+
+.addon-manager {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(14, 24, 19, 0.62);
+}
+
+.addon-manager.is-open {
+  display: flex;
+}
+
+.addon-manager-panel {
+  position: relative;
+  width: min(100%, 860px);
+  max-height: min(92vh, 900px);
+  max-height: min(92dvh, 900px);
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--surface-color);
+  box-shadow: 0 18px 50px rgba(14, 24, 19, 0.25);
+}
+
+.addon-manager-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--text-color);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.addon-manager-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-right: 40px;
+}
+
+.addon-manager-eyebrow {
+  margin: 0 0 6px;
+  color: #176b55;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.addon-manager-heading h2 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1.4rem;
+}
+
+.addon-manager-heading div > p:last-child,
+.addon-bulk-link > p {
+  margin: 6px 0 0;
+  color: var(--muted-color);
+  font-size: 0.9rem;
+}
+
+.addon-new-group,
+.addon-editor-save,
+.addon-link-submit {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--system-primary-color);
+  color: #ffffff;
+  font: 600 0.9rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.addon-manager-feedback,
+.addon-editor-feedback,
+.addon-link-feedback {
+  min-height: 1.4em;
+  margin: 10px 0;
+  color: var(--muted-color);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.addon-manager-feedback[data-state="error"] {
+  color: #a52c2c;
+}
+
+.global-addon-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.global-addon-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   padding: 14px;
   border: 1px solid var(--border-color);
-  border-radius: 9px;
-  background: #ffffff;
+  border-radius: 10px;
+  background: #fbfcfb;
 }
 
-.addon-group-header {
+.global-addon-content {
+  min-width: 0;
+}
+
+.global-addon-content h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.global-addon-content > p {
+  margin: 5px 0;
+  color: var(--muted-color);
+  font-size: 0.83rem;
+}
+
+.global-addon-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #35433c;
+  font-size: 0.83rem;
+}
+
+.global-addon-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.global-addon-actions button,
+.addon-editor-cancel {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-color);
+  font: 600 0.82rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.global-addon-actions .global-addon-delete {
+  border-color: #f0caca;
+  background: #fff5f5;
+  color: #a52c2c;
+}
+
+.addon-list-empty {
+  padding: 16px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--muted-color);
+  text-align: center;
+}
+
+.addon-group-form,
+.addon-bulk-link {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #f8faf9;
+}
+
+.addon-group-form[hidden],
+.addon-link-products[hidden] {
+  display: none;
+}
+
+.addon-group-form h3,
+.addon-bulk-link h3 {
+  margin: 0 0 12px;
+  color: var(--text-color);
+  font-size: 1.05rem;
+}
+
+.addon-group-form > label,
+.addon-group-form > input:not([type="hidden"]),
+#addon-link-form > label {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  color: var(--text-color);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.addon-group-form input[type="text"],
+.addon-group-form input[type="number"],
+#addon-link-form select {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 5px;
+  padding: 8px 10px;
+  border: 1px solid #cbd7d1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--text-color);
+  font: inherit;
+}
+
+.addon-editor-rules {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(100px, 0.65fr));
+  align-items: end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.addon-editor-rules > label:not(.addon-editor-checkbox) {
+  display: grid;
+  gap: 4px;
+  color: var(--text-color);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.addon-editor-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  color: var(--text-color);
+  font-size: 0.86rem;
+}
+
+.addon-editor-items-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin: 14px 0 8px;
 }
 
-.addon-group-header h4 {
+.addon-editor-items-heading h4 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-.addon-remove-group,
-.addon-remove-item {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 36px;
+.addon-editor-add-item {
   padding: 7px 10px;
-  border: 1px solid #f0caca;
-  border-radius: 7px;
-  background: #fff5f5;
-  color: #a52c2c;
-  font: inherit;
-  font-size: 0.82rem;
+  border: 1px solid #b9d9c7;
+  border-radius: 6px;
+  background: #eaf7ef;
+  color: #176b3e;
+  font: 600 0.82rem "Roboto", sans-serif;
   cursor: pointer;
 }
 
-.addon-group > label,
-.addon-rules > label:not(.addon-checkbox),
-.addon-item > label:not(.addon-checkbox) {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: 100%;
-  min-width: 0;
-  margin: 0;
+.addon-editor-items {
+  display: grid;
+  gap: 8px;
+}
+
+.addon-editor-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(110px, 0.7fr) auto 38px;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.addon-editor-item > label:not(.addon-editor-checkbox) {
+  display: grid;
+  gap: 4px;
   color: var(--text-color);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
-.addon-group input[type="text"],
-.addon-group input[type="number"] {
+.addon-editor-item input[type="text"],
+.addon-editor-item input[type="number"] {
   width: 100%;
-  min-width: 0;
   min-height: 40px;
   margin: 0;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border: 1px solid #cbd7d1;
   border-radius: 6px;
-  background: #ffffff;
-  color: var(--text-color);
   font: inherit;
 }
 
-.addon-rules {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(100px, 0.55fr));
-  align-items: end;
-  gap: 10px;
-  margin: 12px 0;
+.addon-editor-remove-item {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #f0caca;
+  border-radius: 6px;
+  background: #fff5f5;
+  color: #a52c2c;
+  cursor: pointer;
 }
 
-.addon-checkbox {
+.addon-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.addon-link-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.addon-link-modes legend {
+  padding: 0 5px;
+  color: var(--text-color);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.addon-link-modes label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: auto;
-  min-height: 40px;
+  gap: 7px;
   margin: 0;
   color: var(--text-color);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.86rem;
 }
 
-.addon-checkbox input {
-  width: 18px !important;
-  height: 18px;
-  flex: 0 0 auto;
-  margin: 0 !important;
-  accent-color: var(--system-primary-color);
+.addon-link-category > label {
+  display: block;
+  color: var(--text-color);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
-.addon-items {
+.addon-link-products > p {
+  margin: 0 0 7px;
+  color: var(--text-color);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.addon-product-checklist {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 7px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 2px;
 }
 
-.addon-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(100px, 0.7fr) auto 38px;
-  align-items: end;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid #edf1ef;
-  border-radius: 7px;
-  background: #fbfcfb;
+.addon-product-option {
+  font-size: 0.86rem;
 }
 
-.addon-item-available {
-  white-space: nowrap;
-}
-
-.addon-remove-item {
-  width: 38px;
-  min-width: 38px;
-  padding: 6px;
-}
-
-.addon-add-item {
-  margin-top: 10px;
+.addon-link-submit {
+  width: 100%;
+  margin-top: 8px;
 }
 
 @media (max-width: 600px) {
-  .addons-section {
+  .product-addon-selector {
     padding: 12px;
   }
 
-  .addons-section-header {
+  .addon-manager-panel {
+    padding: 22px 14px;
+  }
+
+  .addon-manager-heading {
+    align-items: flex-start;
     flex-direction: column;
   }
 
-  .addon-rules {
+  .addon-manager-heading h2 {
+    font-size: 1.2rem;
+  }
+
+  .global-addon-card {
+    flex-direction: column;
+  }
+
+  .addon-editor-rules {
     grid-template-columns: 1fr 1fr;
   }
 
-  .addon-rules .addon-checkbox {
+  .addon-editor-rules .addon-editor-checkbox {
     grid-column: 1 / -1;
   }
 
-  .addon-item {
+  .addon-editor-item {
     grid-template-columns: minmax(0, 1fr) minmax(90px, 0.7fr) 38px;
   }
 
-  .addon-item-available {
+  .addon-editor-item .addon-editor-checkbox {
     grid-column: 1 / 3;
     grid-row: 2;
   }
 
-  .addon-remove-item {
+  .addon-editor-remove-item {
     grid-column: 3;
     grid-row: 1 / 3;
   }

@@ -784,170 +784,478 @@ async function buscarDisponiveis() {
   }
 }
 
-function createAddonGroup(container, group = {}) {
-  const card = document.createElement("article");
-  card.className = "addon-group";
+let addonGroups = [];
+let addonGroupsLoaded = false;
+let addonGroupProducts = [];
+let isSavingAddonGroup = false;
 
-  const heading = document.createElement("header");
-  heading.className = "addon-group-header";
-  const title = document.createElement("h4");
-  title.textContent = "Grupo de adicionais";
-  const removeGroup = document.createElement("button");
-  removeGroup.type = "button";
-  removeGroup.className = "addon-remove-group";
-  removeGroup.setAttribute("aria-label", "Excluir grupo");
-  removeGroup.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir Grupo';
-  removeGroup.addEventListener("click", () => card.remove());
-  heading.append(title, removeGroup);
-
-  const groupTitleLabel = document.createElement("label");
-  groupTitleLabel.textContent = "Título do Grupo";
-  const groupTitle = document.createElement("input");
-  groupTitle.type = "text";
-  groupTitle.className = "addon-title";
-  groupTitle.placeholder = "Ex.: Escolha a Borda";
-  groupTitle.value = typeof group.titulo === "string" ? group.titulo : "";
-  groupTitleLabel.append(groupTitle);
-
-  const rules = document.createElement("div");
-  rules.className = "addon-rules";
-  const requiredLabel = document.createElement("label");
-  requiredLabel.className = "addon-checkbox";
-  const requiredInput = document.createElement("input");
-  requiredInput.type = "checkbox";
-  requiredInput.className = "addon-required";
-  requiredInput.checked = Boolean(group.obrigatorio);
-  requiredLabel.append(requiredInput, document.createTextNode("Preenchimento Obrigatório?"));
-
-  const minLabel = document.createElement("label");
-  minLabel.textContent = "Mínimo de opções";
-  const minInput = document.createElement("input");
-  minInput.type = "number";
-  minInput.className = "addon-min";
-  minInput.min = "0";
-  minInput.step = "1";
-  minInput.value = group.min ?? 0;
-  minLabel.append(minInput);
-
-  const maxLabel = document.createElement("label");
-  maxLabel.textContent = "Máximo de opções";
-  const maxInput = document.createElement("input");
-  maxInput.type = "number";
-  maxInput.className = "addon-max";
-  maxInput.min = "0";
-  maxInput.step = "1";
-  maxInput.value = group.max ?? 1;
-  maxLabel.append(maxInput);
-  rules.append(requiredLabel, minLabel, maxLabel);
-
-  const items = document.createElement("div");
-  items.className = "addon-items";
-  items.setAttribute("aria-label", "Itens do grupo");
-
-  function addItem(item = {}) {
-    const row = document.createElement("div");
-    row.className = "addon-item";
-
-    const nameLabel = document.createElement("label");
-    nameLabel.textContent = "Nome do Item";
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.className = "addon-item-name";
-    nameInput.placeholder = "Ex.: Bacon Extra";
-    nameInput.value = typeof item.nome === "string" ? item.nome : "";
-    nameLabel.append(nameInput);
-
-    const priceLabel = document.createElement("label");
-    priceLabel.textContent = "Preço Adicional (R$)";
-    const priceInput = document.createElement("input");
-    priceInput.type = "number";
-    priceInput.className = "addon-item-price";
-    priceInput.min = "0";
-    priceInput.step = "0.01";
-    priceInput.value = item.preco ?? 0;
-    priceLabel.append(priceInput);
-
-    const availableLabel = document.createElement("label");
-    availableLabel.className = "addon-checkbox addon-item-available";
-    const availableInput = document.createElement("input");
-    availableInput.type = "checkbox";
-    availableInput.className = "addon-item-enabled";
-    availableInput.checked = item.disponivel !== false;
-    availableLabel.append(availableInput, document.createTextNode("Disponível"));
-
-    const removeItem = document.createElement("button");
-    removeItem.type = "button";
-    removeItem.className = "addon-remove-item";
-    removeItem.setAttribute("aria-label", "Remover item");
-    removeItem.title = "Remover item";
-    removeItem.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
-    removeItem.addEventListener("click", () => row.remove());
-
-    row.append(nameLabel, priceLabel, availableLabel, removeItem);
-    items.append(row);
-  }
-
-  if (Array.isArray(group.itens)) group.itens.forEach(addItem);
-
-  const addItemButton = document.createElement("button");
-  addItemButton.type = "button";
-  addItemButton.className = "addon-add-item";
-  addItemButton.textContent = "➕ Adicionar Item ao Grupo";
-  addItemButton.addEventListener("click", () => addItem());
-
-  card.append(heading, groupTitleLabel, rules, items, addItemButton);
-  container.append(card);
+function getAddonGroupId(group) {
+  const id = group?._id ?? group?.id;
+  return id === undefined || id === null ? "" : String(id);
 }
 
-function renderAddonGroups(container, groups = []) {
+function normalizeAddonGroup(value) {
+  if (!value || typeof value !== "object") return null;
+  const id = getAddonGroupId(value);
+  const titulo = value.titulo ?? value.title ?? value.name ?? value.nome;
+  if (!id || typeof titulo !== "string" || !titulo.trim()) return null;
+  const min = Number(value.min ?? 0);
+  const max = Number(value.max ?? 1);
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max < min) return null;
+  return {
+    id,
+    titulo: titulo.trim(),
+    obrigatorio: Boolean(value.obrigatorio ?? value.required),
+    min,
+    max,
+    itens: Array.isArray(value.itens) ? value.itens : Array.isArray(value.items) ? value.items : [],
+  };
+}
+
+function addonGroupResponseValues(body) {
+  if (Array.isArray(body)) return body;
+  return body?.groups ?? body?.addonGroups ?? body?.gruposAdicionais ?? body?.data;
+}
+
+function extractAddonGroupIds(product) {
+  const groups = product.gruposAdicionaisIds ?? product.gruposAdicionais ?? product.addonGroupIds ?? [];
+  if (!Array.isArray(groups)) return [];
+  return groups
+    .map((group) => (typeof group === "object" && group !== null ? getAddonGroupId(group) : String(group)))
+    .filter(Boolean);
+}
+
+function renderProductAddonSelector(container, selectedIds = []) {
   if (!container) return;
   container.replaceChildren();
-  if (Array.isArray(groups)) groups.forEach((group) => createAddonGroup(container, group));
+  const selected = new Set(selectedIds.map(String));
+  if (!addonGroups.length) {
+    const empty = document.createElement("p");
+    empty.className = "addon-selector-empty";
+    empty.textContent = addonGroupsLoaded
+      ? "Nenhum grupo cadastrado. Crie grupos em “Meus Grupos de Adicionais”."
+      : "Carregando grupos de adicionais...";
+    container.append(empty);
+    return;
+  }
+
+  addonGroups.forEach((group) => {
+    const label = document.createElement("label");
+    label.className = "product-addon-option";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "gruposAdicionaisIds";
+    checkbox.value = group.id;
+    checkbox.checked = selected.has(group.id);
+    const content = document.createElement("span");
+    const title = document.createElement("strong");
+    title.textContent = group.titulo;
+    const rules = document.createElement("small");
+    rules.textContent = `${group.obrigatorio ? "Obrigatório" : "Opcional"} · mínimo ${group.min} · máximo ${group.max}`;
+    content.append(title, rules);
+    label.append(checkbox, content);
+    container.append(label);
+  });
 }
 
-function collectAddonGroups(container) {
-  return [...container.querySelectorAll(".addon-group")].map((card, groupIndex) => {
-    const titulo = card.querySelector(".addon-title").value.trim();
-    const minValue = card.querySelector(".addon-min").value;
-    const maxValue = card.querySelector(".addon-max").value;
-    const min = Number(minValue);
-    const max = Number(maxValue);
-    if (!titulo) throw new Error(`Informe o título do grupo ${groupIndex + 1}.`);
-    if (!minValue || !maxValue || !Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max < 0) {
-      throw new Error(`Informe valores inteiros válidos para mínimo e máximo no grupo "${titulo}".`);
-    }
-    if (min > max) throw new Error(`O mínimo não pode ser maior que o máximo no grupo "${titulo}".`);
+function collectSelectedAddonGroupIds(container) {
+  return [...container.querySelectorAll('input[name="gruposAdicionaisIds"]:checked')].map((input) => input.value);
+}
 
-    const itens = [...card.querySelectorAll(".addon-item")].map((row, itemIndex) => {
-      const nome = row.querySelector(".addon-item-name").value.trim();
-      const precoValue = row.querySelector(".addon-item-price").value;
-      const preco = Number(precoValue);
-      if (!nome) throw new Error(`Informe o nome do item ${itemIndex + 1} no grupo "${titulo}".`);
-      if (!precoValue || !Number.isFinite(preco) || preco < 0) {
-        throw new Error(`Informe um preço válido para "${nome}".`);
-      }
-      return {
-        nome,
-        preco,
-        disponivel: row.querySelector(".addon-item-enabled").checked,
-      };
+async function loadAddonGroups() {
+  if (!hasCurrentUser()) throw new Error("Selecione um cliente válido para carregar grupos de adicionais.");
+  const response = await fetch(`${urlNetixZae}/addon-groups`, {
+    headers: { user_id: id_user },
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(categoryApiError(body, response.status));
+  const values = addonGroupResponseValues(body);
+  if (!Array.isArray(values)) throw new Error("Resposta inválida ao carregar grupos de adicionais.");
+  const normalized = values.map(normalizeAddonGroup);
+  if (normalized.some((group) => !group)) throw new Error("A API retornou um grupo sem ID ou título válido.");
+  addonGroups = normalized;
+  addonGroupsLoaded = true;
+  renderAddonGroupList();
+  renderAddonGroupSelect();
+  return addonGroups;
+}
+
+function renderAddonGroupList() {
+  const list = document.querySelector(".global-addon-list");
+  if (!list) return;
+  list.replaceChildren();
+  if (!addonGroups.length) {
+    const empty = document.createElement("li");
+    empty.className = "addon-list-empty";
+    empty.textContent = "Você ainda não cadastrou grupos de adicionais.";
+    list.append(empty);
+    return;
+  }
+
+  addonGroups.forEach((group) => {
+    const row = document.createElement("li");
+    row.className = "global-addon-card";
+    const content = document.createElement("div");
+    content.className = "global-addon-content";
+    const title = document.createElement("h3");
+    title.textContent = group.titulo;
+    const rules = document.createElement("p");
+    rules.textContent = `${group.obrigatorio ? "Obrigatório" : "Opcional"} · mínimo ${group.min} · máximo ${group.max}`;
+    const items = document.createElement("ul");
+    items.className = "global-addon-items";
+    group.itens.forEach((item) => {
+      const itemRow = document.createElement("li");
+      const itemName = item.nome ?? item.name ?? "Item sem nome";
+      const itemPrice = Number(item.preco ?? item.price ?? 0);
+      itemRow.textContent = `${itemName} · ${Number.isFinite(itemPrice) ? itemPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Preço inválido"}${item.disponivel === false || item.available === false ? " · indisponível" : ""}`;
+      items.append(itemRow);
     });
+    content.append(title, rules, items);
+    const actions = document.createElement("div");
+    actions.className = "global-addon-actions";
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.textContent = "Editar";
+    editButton.addEventListener("click", () => openAddonGroupEditor(group));
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "global-addon-delete";
+    deleteButton.textContent = "Excluir";
+    deleteButton.addEventListener("click", () => deleteAddonGroup(group, deleteButton));
+    actions.append(editButton, deleteButton);
+    row.append(content, actions);
+    list.append(row);
+  });
+}
 
+function renderAddonGroupSelect() {
+  const select = document.getElementById("addon-link-group");
+  if (!select) return;
+  const selectedId = select.value;
+  select.replaceChildren(new Option("Selecione um grupo", ""));
+  addonGroups.forEach((group) => select.add(new Option(group.titulo, group.id)));
+  select.value = addonGroups.some((group) => group.id === selectedId) ? selectedId : "";
+}
+
+function renderProductAddonGroups(container, selectedIds = []) {
+  renderProductAddonSelector(container, selectedIds);
+}
+
+function setAddonManagerFeedback(message, isError = false) {
+  const feedback = document.querySelector(".addon-manager-feedback");
+  feedback.textContent = message;
+  feedback.dataset.state = isError ? "error" : "success";
+}
+
+function addAddonEditorItem(item = {}) {
+  const container = document.querySelector(".addon-editor-items");
+  const row = document.createElement("div");
+  row.className = "addon-editor-item";
+  const nameLabel = document.createElement("label");
+  nameLabel.textContent = "Nome do item";
+  const name = document.createElement("input");
+  name.type = "text";
+  name.className = "addon-editor-item-name";
+  name.value = item.nome ?? item.name ?? "";
+  name.placeholder = "Ex.: Catupiry";
+  name.required = true;
+  nameLabel.append(name);
+
+  const priceLabel = document.createElement("label");
+  priceLabel.textContent = "Preço adicional (R$)";
+  const price = document.createElement("input");
+  price.type = "number";
+  price.className = "addon-editor-item-price";
+  price.min = "0";
+  price.step = "0.01";
+  price.value = item.preco ?? item.price ?? 0;
+  price.required = true;
+  priceLabel.append(price);
+
+  const availableLabel = document.createElement("label");
+  availableLabel.className = "addon-editor-checkbox";
+  const available = document.createElement("input");
+  available.type = "checkbox";
+  available.className = "addon-editor-item-available";
+  available.checked = item.disponivel !== false && item.available !== false;
+  availableLabel.append(available, document.createTextNode("Disponível"));
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "addon-editor-remove-item";
+  remove.setAttribute("aria-label", "Remover item");
+  remove.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+  remove.addEventListener("click", () => row.remove());
+  row.append(nameLabel, priceLabel, availableLabel, remove);
+  container.append(row);
+}
+
+function resetAddonGroupEditor() {
+  const form = document.getElementById("addon-group-form");
+  form.reset();
+  document.getElementById("addon-group-id").value = "";
+  document.getElementById("addon-group-min").value = "0";
+  document.getElementById("addon-group-max").value = "1";
+  document.querySelector(".addon-editor-items").replaceChildren();
+  document.querySelector(".addon-editor-title").textContent = "Novo grupo";
+  document.querySelector(".addon-editor-save").textContent = "Salvar grupo";
+  document.querySelector(".addon-editor-feedback").textContent = "";
+  form.hidden = false;
+  document.getElementById("addon-group-title").focus();
+}
+
+function openAddonGroupEditor(group) {
+  resetAddonGroupEditor();
+  if (!group) return;
+  document.getElementById("addon-group-id").value = group.id;
+  document.getElementById("addon-group-title").value = group.titulo;
+  document.getElementById("addon-group-required").checked = group.obrigatorio;
+  document.getElementById("addon-group-min").value = group.min;
+  document.getElementById("addon-group-max").value = group.max;
+  group.itens.forEach(addAddonEditorItem);
+  document.querySelector(".addon-editor-title").textContent = "Editar grupo";
+  document.querySelector(".addon-editor-save").textContent = "Salvar alterações";
+}
+
+function collectAddonGroupEditor() {
+  const titulo = document.getElementById("addon-group-title").value.trim();
+  const minValue = document.getElementById("addon-group-min").value;
+  const maxValue = document.getElementById("addon-group-max").value;
+  const min = Number(minValue);
+  const max = Number(maxValue);
+  if (!titulo) throw new Error("Informe o título do grupo.");
+  if (!minValue || !maxValue || !Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max < 0) {
+    throw new Error("Informe mínimo e máximo como números inteiros iguais ou maiores que zero.");
+  }
+  if (min > max) throw new Error("O mínimo não pode ser maior que o máximo.");
+  const itens = [...document.querySelectorAll(".addon-editor-item")].map((row, index) => {
+    const nome = row.querySelector(".addon-editor-item-name").value.trim();
+    const precoValue = row.querySelector(".addon-editor-item-price").value;
+    const preco = Number(precoValue);
+    if (!nome) throw new Error(`Informe o nome do item ${index + 1}.`);
+    if (!precoValue || !Number.isFinite(preco) || preco < 0) throw new Error(`Informe um preço válido para "${nome}".`);
     return {
-      titulo,
-      obrigatorio: card.querySelector(".addon-required").checked,
-      min,
-      max,
-      itens,
+      nome,
+      preco,
+      disponivel: row.querySelector(".addon-editor-item-available").checked,
     };
   });
+  return {
+    titulo,
+    obrigatorio: document.getElementById("addon-group-required").checked,
+    min,
+    max,
+    itens,
+  };
 }
 
-document.querySelectorAll(".add-addon-group").forEach((button) => {
-  button.addEventListener("click", () => {
-    const container = document.getElementById(button.dataset.target);
-    if (container) createAddonGroup(container);
+async function deleteAddonGroup(group, button) {
+  if (isSavingAddonGroup || !window.confirm(`Excluir o grupo "${group.titulo}"?`)) return;
+  button.disabled = true;
+  try {
+    const response = await fetch(`${urlNetixZae}/addon-groups/${encodeURIComponent(group.id)}`, {
+      method: "DELETE",
+      headers: { user_id: id_user },
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(categoryApiError(body, response.status));
+    await loadAddonGroups();
+    setAddonManagerFeedback(`Grupo "${group.titulo}" excluído.`);
+  } catch (error) {
+    setAddonManagerFeedback(`Não foi possível excluir o grupo: ${error.message}`, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+const addonGroupManager = document.getElementById("addon-group-manager");
+const manageAddonGroupsButton = document.querySelector(".manage-addon-groups");
+const addonGroupForm = document.getElementById("addon-group-form");
+const addonLinkForm = document.getElementById("addon-link-form");
+const addonLinkFeedback = document.querySelector(".addon-link-feedback");
+
+function renderAddonCategories() {
+  const select = document.getElementById("addon-link-category-select");
+  const selectedId = select.value;
+  select.replaceChildren(new Option("Selecione uma categoria", ""));
+  categories.forEach((category) => select.add(new Option(category.name, category.id)));
+  select.value = categories.some((category) => category.id === selectedId) ? selectedId : "";
+}
+
+function renderAddonProductChecklist() {
+  const container = document.querySelector(".addon-product-checklist");
+  container.replaceChildren();
+  const categoryId = document.getElementById("addon-link-category-select").value;
+  const products = addonGroupProducts.filter((product) => {
+    return !categoryId || String(product.categoriaId ?? product.categoryId ?? "") === categoryId;
   });
+  if (!products.length) {
+    const empty = document.createElement("p");
+    empty.textContent = categoryId ? "Não há produtos nesta categoria." : "Nenhum produto encontrado.";
+    container.append(empty);
+    return;
+  }
+  products.forEach((product) => {
+    const id = String(product._id ?? product.id ?? "");
+    if (!id) return;
+    const label = document.createElement("label");
+    label.className = "addon-product-option";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "addon-product-id";
+    checkbox.value = id;
+    const name = document.createElement("span");
+    name.textContent = product.description ?? product.name ?? "Produto sem nome";
+    label.append(checkbox, name);
+    container.append(label);
+  });
+}
+
+async function loadAddonLinkProducts() {
+  const response = await fetch(`${urlNetixZae}/dashboard/${id_user}`);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(categoryApiError(body, response.status));
+  if (!Array.isArray(body)) throw new Error("Resposta inválida ao carregar produtos.");
+  addonGroupProducts = body;
+  productsById = new Map(body.map((product) => [String(product._id ?? product.id), product]));
+  renderAddonProductChecklist();
+}
+
+async function openAddonGroupManager() {
+  if (!hasCurrentUser()) return;
+  addonGroupManager.classList.add("is-open");
+  addonGroupManager.setAttribute("aria-hidden", "false");
+  document.querySelector(".addon-editor-feedback").textContent = "";
+  document.getElementById("addon-group-form").hidden = true;
+  setAddonManagerFeedback("Carregando grupos...");
+  try {
+    const results = await Promise.all([loadAddonGroups(), loadCategories(), loadAddonLinkProducts()]);
+    renderAddonCategories();
+    renderAddonProductChecklist();
+    setAddonManagerFeedback(`${results[0].length} grupo(s) carregado(s).`);
+  } catch (error) {
+    setAddonManagerFeedback(`Não foi possível carregar os dados: ${error.message}`, true);
+  }
+}
+
+function closeAddonGroupManager() {
+  addonGroupManager.classList.remove("is-open");
+  addonGroupManager.setAttribute("aria-hidden", "true");
+  manageAddonGroupsButton?.focus();
+}
+
+if (manageAddonGroupsButton && addonGroupManager) {
+  manageAddonGroupsButton.addEventListener("click", openAddonGroupManager);
+  document.querySelector(".addon-manager-close").addEventListener("click", closeAddonGroupManager);
+  addonGroupManager.addEventListener("click", (event) => {
+    if (event.target === addonGroupManager) closeAddonGroupManager();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && addonGroupManager.classList.contains("is-open")) closeAddonGroupManager();
+  });
+}
+
+document.querySelector(".addon-new-group")?.addEventListener("click", () => openAddonGroupEditor());
+document.querySelector(".addon-editor-add-item")?.addEventListener("click", () => addAddonEditorItem());
+document.querySelector(".addon-editor-cancel")?.addEventListener("click", () => {
+  addonGroupForm.hidden = true;
+  addonGroupForm.reset();
+});
+
+addonGroupForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (isSavingAddonGroup) return;
+  const feedback = document.querySelector(".addon-editor-feedback");
+  let payload;
+  try {
+    payload = collectAddonGroupEditor();
+  } catch (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  const groupId = document.getElementById("addon-group-id").value;
+  const method = groupId ? "PUT" : "POST";
+  isSavingAddonGroup = true;
+  document.querySelector(".addon-editor-save").disabled = true;
+  feedback.textContent = "Salvando grupo...";
+  try {
+    const response = await fetch(
+      groupId ? `${urlNetixZae}/addon-groups/${encodeURIComponent(groupId)}` : `${urlNetixZae}/addon-groups`,
+      {
+        method,
+        headers: { "Content-Type": "application/json", user_id: id_user },
+        body: JSON.stringify(payload),
+      }
+    );
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(categoryApiError(body, response.status));
+    await loadAddonGroups();
+    addonGroupForm.hidden = true;
+    feedback.textContent = "";
+    setAddonManagerFeedback(groupId ? "Grupo atualizado com sucesso." : "Grupo criado com sucesso.");
+  } catch (error) {
+    feedback.textContent = `Não foi possível salvar o grupo: ${error.message}`;
+  } finally {
+    isSavingAddonGroup = false;
+    document.querySelector(".addon-editor-save").disabled = false;
+  }
+});
+
+document.querySelectorAll('input[name="addon-link-mode"]').forEach((input) => {
+  input.addEventListener("change", () => {
+    const isProducts = document.querySelector('input[name="addon-link-mode"]:checked').value === "products";
+    document.querySelector(".addon-link-category").hidden = isProducts;
+    document.querySelector(".addon-link-products").hidden = !isProducts;
+    addonLinkFeedback.textContent = "";
+  });
+});
+
+document.getElementById("addon-link-category-select")?.addEventListener("change", renderAddonProductChecklist);
+
+addonLinkForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  addonLinkFeedback.textContent = "";
+  const groupId = document.getElementById("addon-link-group").value;
+  const mode = document.querySelector('input[name="addon-link-mode"]:checked').value;
+  const payload = { groupId };
+  if (!groupId) {
+    addonLinkFeedback.textContent = "Selecione um grupo para vincular.";
+    return;
+  }
+  if (mode === "category") {
+    const categoryId = document.getElementById("addon-link-category-select").value;
+    if (!categoryId) {
+      addonLinkFeedback.textContent = "Selecione uma categoria.";
+      return;
+    }
+    payload.categoryId = categoryId;
+  } else {
+    const productIds = [...document.querySelectorAll('input[name="addon-product-id"]:checked')].map((input) => input.value);
+    if (!productIds.length) {
+      addonLinkFeedback.textContent = "Selecione ao menos um produto.";
+      return;
+    }
+    payload.productIds = productIds;
+  }
+
+  const submitButton = document.querySelector(".addon-link-submit");
+  submitButton.disabled = true;
+  addonLinkFeedback.textContent = "Vinculando grupo...";
+  try {
+    const response = await fetch(`${urlNetixZae}/addon-groups/vincular`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", user_id: id_user },
+      body: JSON.stringify(payload),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(categoryApiError(body, response.status));
+    addonLinkFeedback.textContent = "Grupo vinculado com sucesso.";
+  } catch (error) {
+    addonLinkFeedback.textContent = `Não foi possível vincular o grupo: ${error.message}`;
+  } finally {
+    submitButton.disabled = false;
+  }
 });
 
 const edit = document.querySelector(".edit");
@@ -962,7 +1270,18 @@ function openEdit(id) {
   document.querySelector(".nomeP").textContent = product.description || "";
   document.getElementById("att-valor").value = product.price ?? "";
   document.getElementById("att-status").checked = Boolean(product.status);
-  renderAddonGroups(document.getElementById("att-addon-groups"), product.gruposAdicionais);
+  const addonOptions = document.getElementById("att-addon-options");
+  const addonFeedback = document.getElementById("att-addon-feedback");
+  addonFeedback.textContent = "Carregando grupos de adicionais...";
+  renderProductAddonGroups(addonOptions, extractAddonGroupIds(product));
+  loadAddonGroups()
+    .then(() => {
+      renderProductAddonGroups(addonOptions, extractAddonGroupIds(product));
+      addonFeedback.textContent = "";
+    })
+    .catch((error) => {
+      addonFeedback.textContent = `Não foi possível carregar os grupos: ${error.message}`;
+    });
   populateCategorySelect(document.getElementById("att-category"), product.categoriaId ?? product.categoryId ?? "");
   const categoryMessage = document.getElementById("att-category-message");
   if (categoryMessage) categoryMessage.textContent = "";
@@ -1010,6 +1329,7 @@ function openEdit(id) {
         return;
       }
 
+      if (!addonGroupsLoaded) await loadAddonGroups();
       if (imageFile) {
         const imageMessage = document.getElementById("att-image-message");
         imageMessage.textContent = "Validando imagem...";
@@ -1025,11 +1345,11 @@ function openEdit(id) {
         price: attValor,
         status: attStatus,
         categoriaId: document.getElementById("att-category").value || null,
-        gruposAdicionais: collectAddonGroups(document.getElementById("att-addon-groups")),
+        gruposAdicionaisIds: collectSelectedAddonGroupIds(document.getElementById("att-addon-options")),
       };
       if (imageFile) payload.thumbnail = await uploadProductImage(imageFile);
 
-      const reqAtt = await fetch(`${urlNetixZae}/atualizar/${id}`, {
+      const reqAtt = await fetch(`${urlNetixZae}/products/${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1273,6 +1593,7 @@ function closeCategoryManager() {
 if (addProduto && manageCategoriesButton && hasCurrentUser()) {
   addProduto.disabled = false;
   manageCategoriesButton.disabled = false;
+  if (manageAddonGroupsButton) manageAddonGroupsButton.disabled = false;
   if (managePlacesButton) managePlacesButton.disabled = false;
 }
 
@@ -1629,7 +1950,8 @@ if (addProduto && newConteiner) {
   addProduto.addEventListener("click", async function () {
     if (!hasCurrentUser()) return;
     document.querySelector(".new-product-message").textContent = "";
-    renderAddonGroups(document.getElementById("new-addon-groups"));
+    document.getElementById("new-addon-feedback").textContent = "Carregando grupos de adicionais...";
+    renderProductAddonGroups(document.getElementById("new-addon-options"));
     populateCategorySelect(document.getElementById("new-category"), pendingProductCategoryId);
     newConteiner.style.display = "flex";
     newConteiner.setAttribute("aria-hidden", "false");
@@ -1641,6 +1963,13 @@ if (addProduto && newConteiner) {
       const message = document.querySelector(".new-product-message");
       message.textContent = `Não foi possível carregar as categorias: ${error.message}`;
       message.classList.add("is-visible");
+    }
+    try {
+      await loadAddonGroups();
+      renderProductAddonGroups(document.getElementById("new-addon-options"));
+      document.getElementById("new-addon-feedback").textContent = "";
+    } catch (error) {
+      document.getElementById("new-addon-feedback").textContent = `Não foi possível carregar os grupos: ${error.message}`;
     }
   });
 }
@@ -1690,9 +2019,10 @@ async function novoProduto() {
     return;
   }
 
-  let gruposAdicionais;
+  let gruposAdicionaisIds;
   try {
-    gruposAdicionais = collectAddonGroups(document.getElementById("new-addon-groups"));
+    if (!addonGroupsLoaded) await loadAddonGroups();
+    gruposAdicionaisIds = collectSelectedAddonGroupIds(document.getElementById("new-addon-options"));
   } catch (error) {
     formMessage.textContent = error.message;
     formMessage.classList.add("is-visible");
@@ -1715,7 +2045,7 @@ async function novoProduto() {
     const imageUrl = await uploadProductImage(imageFile);
     formMessage.textContent = "Imagem enviada. Cadastrando produto...";
 
-    const reqNew = await fetch(`${urlNetixZae}/add-produto`, {
+    const reqNew = await fetch(`${urlNetixZae}/products`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1729,7 +2059,7 @@ async function novoProduto() {
         status: true,
         thumbnail: imageUrl,
         categoriaId: document.getElementById("new-category").value || null,
-        gruposAdicionais,
+        gruposAdicionaisIds,
       }),
     });
 
