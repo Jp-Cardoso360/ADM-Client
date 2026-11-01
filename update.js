@@ -12,7 +12,9 @@ let productsById = new Map();
 let categories = [];
 let pendingProductCategoryId = "";
 let empresaAtual = null;
-let companyBannerObjectUrl = null;
+const companyImageObjectUrls = { banner: null, logo: null };
+let companySettingsDirty = false;
+let companyProfileLoading = false;
 const sucess = document.querySelector(".sucess");
 const mensagem = document.querySelector(".mensagem");
 const failed = document.querySelector(".failed");
@@ -112,6 +114,15 @@ if (updateImageInput) {
 const companySettings = document.querySelector(".company-settings");
 const companySettingsForm = document.getElementById("company-settings-form");
 const companyBannerInput = document.getElementById("company-banner");
+const companyLogoInput = document.getElementById("company-logo");
+const companyProfileStatus = document.querySelector(".company-profile-status");
+const companyWeekdays = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+const defaultCompanyHours = companyWeekdays.map((_, diaSemana) => ({
+  diaSemana,
+  ativo: false,
+  abertura: "09:00",
+  fechamento: "18:00",
+}));
 
 function setCompanyMessage(text, state = "") {
   const message = document.querySelector(".company-settings-message");
@@ -132,25 +143,101 @@ function companyBannerUrl(user) {
   return user.banner || user.banner_url || user.bannerUrl || "";
 }
 
-function showCompanyBannerPreview(source) {
-  if (companyBannerObjectUrl) {
-    URL.revokeObjectURL(companyBannerObjectUrl);
-    companyBannerObjectUrl = null;
+function companyLogoUrl(user) {
+  return user.logo || user.logo_url || user.logoUrl || "";
+}
+
+function showCompanyImagePreview(source, imageSelector, emptySelector, objectUrlKey) {
+  if (companyImageObjectUrls[objectUrlKey]) {
+    URL.revokeObjectURL(companyImageObjectUrls[objectUrlKey]);
+    companyImageObjectUrls[objectUrlKey] = null;
   }
 
-  const preview = document.querySelector(".company-banner-preview");
-  const emptyMessage = document.querySelector(".company-banner-empty");
+  const preview = document.querySelector(imageSelector);
+  const emptyMessage = document.querySelector(emptySelector);
   preview.hidden = !source;
   emptyMessage.hidden = Boolean(source);
   preview.src = source || "";
 }
 
+function parseCompanyHours(value) {
+  if (typeof value === "string" && value.trim()) {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      throw new Error("Os horários de funcionamento retornados pela API são inválidos.");
+    }
+  }
+  if (!Array.isArray(value) || value.length === 0) return defaultCompanyHours.map((day) => ({ ...day }));
+
+  return defaultCompanyHours.map((fallback, diaSemana) => {
+    const existing = value.find((day) => day && Number(day.diaSemana) === diaSemana);
+    if (!existing) return { ...fallback };
+    return {
+      diaSemana,
+      ativo: existing.ativo === true,
+      abertura: isValidCompanyTime(existing.abertura) ? existing.abertura : fallback.abertura,
+      fechamento: isValidCompanyTime(existing.fechamento) ? existing.fechamento : fallback.fechamento,
+    };
+  });
+}
+
+function isValidCompanyTime(value) {
+  return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function renderCompanyHours(value) {
+  const days = parseCompanyHours(value);
+  const list = document.querySelector(".company-hours-list");
+  list.replaceChildren();
+
+  days.forEach((day, index) => {
+    const row = document.createElement("div");
+    row.className = "company-hours-row";
+    row.innerHTML = `
+      <label class="company-hours-day" for="company-hours-active-${index}">
+        <input type="checkbox" id="company-hours-active-${index}" data-day="${index}" ${day.ativo ? "checked" : ""} />
+        <span>${companyWeekdays[index]}</span>
+      </label>
+      <div class="company-hours-time">
+        <label for="company-hours-opening-${index}">Abertura</label>
+        <input type="time" id="company-hours-opening-${index}" data-opening="${index}" value="${day.abertura}" ${day.ativo ? "" : "disabled"} />
+      </div>
+      <div class="company-hours-time">
+        <label for="company-hours-closing-${index}">Fechamento</label>
+        <input type="time" id="company-hours-closing-${index}" data-closing="${index}" value="${day.fechamento}" ${day.ativo ? "" : "disabled"} />
+      </div>
+    `;
+    row.querySelector(`[data-day="${index}"]`).addEventListener("change", (event) => {
+      row.querySelectorAll('input[type="time"]').forEach((input) => {
+        input.disabled = !event.currentTarget.checked;
+      });
+    });
+    list.append(row);
+  });
+}
+
+function collectCompanyHours() {
+  return companyWeekdays.map((_, diaSemana) => ({
+    diaSemana,
+    ativo: document.getElementById(`company-hours-active-${diaSemana}`).checked,
+    abertura: document.getElementById(`company-hours-opening-${diaSemana}`).value,
+    fechamento: document.getElementById(`company-hours-closing-${diaSemana}`).value,
+  }));
+}
+
 function fillCompanySettings(user) {
   document.getElementById("company-name").value = user.nome || "";
   document.getElementById("company-color").value = normalizedSystemColor(user.corSistema);
-  showCompanyBannerPreview(companyBannerUrl(user));
-  document.getElementById("company-banner").value = "";
+  document.getElementById("company-about").value = user.sobre || "";
+  showCompanyImagePreview(companyBannerUrl(user), ".company-banner-preview", ".company-banner-empty", "banner");
+  showCompanyImagePreview(companyLogoUrl(user), ".company-logo-preview", ".company-logo-empty", "logo");
+  companyBannerInput.value = "";
+  companyLogoInput.value = "";
   document.querySelector(".company-banner-message").textContent = "";
+  document.querySelector(".company-logo-message").textContent = "";
+  renderCompanyHours(user.horariosFuncionamento);
+  companySettingsDirty = false;
   setCompanyMessage("");
 }
 
@@ -158,16 +245,21 @@ const openCompanySettingsButton = document.querySelector(".edit-company");
 if (openCompanySettingsButton && companySettings) {
   openCompanySettingsButton.disabled = true;
   openCompanySettingsButton.addEventListener("click", () => {
-    if (!empresaAtual) return;
-    fillCompanySettings(empresaAtual);
     companySettings.classList.add("is-open");
     companySettings.setAttribute("aria-hidden", "false");
-    document.getElementById("company-name").focus();
+    if (empresaAtual) {
+      fillCompanySettings(empresaAtual);
+      document.getElementById("company-name").focus();
+    } else {
+      setCompanyMessage(companyProfileLoading ? "Carregando configurações..." : "Não foi possível carregar os dados da loja.", companyProfileLoading ? "loading" : "error");
+    }
   });
 }
 
 const closeCompanySettingsButton = document.querySelector(".company-settings-close");
 function closeCompanySettingsModal() {
+  if (companySettingsDirty && !window.confirm("Há alterações não salvas. Deseja descartá-las?")) return;
+  companySettingsDirty = false;
   companySettings.classList.remove("is-open");
   companySettings.setAttribute("aria-hidden", "true");
   openCompanySettingsButton?.focus();
@@ -185,35 +277,72 @@ if (closeCompanySettingsButton && companySettings) {
   });
 }
 
-if (companyBannerInput) {
-  companyBannerInput.addEventListener("change", async () => {
-    const file = companyBannerInput.files[0];
-    const message = document.querySelector(".company-banner-message");
-    if (!file) {
-      message.textContent = "";
-      showCompanyBannerPreview(companyBannerUrl(empresaAtual || {}));
-      return;
-    }
-
-    message.textContent = "Validando banner...";
-    const imageError = await validateImageFile(file);
-    if (companyBannerInput.files[0] !== file) return;
-    if (imageError) {
-      companyBannerInput.value = "";
-      message.textContent = imageError;
-      message.classList.add("is-error");
-      showCompanyBannerPreview(companyBannerUrl(empresaAtual || {}));
-      return;
-    }
-
-    message.textContent = file.name;
-    message.classList.remove("is-error");
-    companyBannerObjectUrl = URL.createObjectURL(file);
-    const preview = document.querySelector(".company-banner-preview");
-    preview.src = companyBannerObjectUrl;
-    preview.hidden = false;
-    document.querySelector(".company-banner-empty").hidden = true;
+if (companySettingsForm) {
+  companySettingsForm.addEventListener("input", () => {
+    companySettingsDirty = true;
   });
+  companySettingsForm.addEventListener("change", () => {
+    companySettingsDirty = true;
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (!companySettingsDirty || !companySettings.classList.contains("is-open")) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+}
+
+async function handleCompanyImageSelection(input, messageSelector, imageSelector, emptySelector, objectUrlKey, urlGetter) {
+  const file = input.files[0];
+  const message = document.querySelector(messageSelector);
+  if (!file) {
+    message.textContent = "";
+    message.classList.remove("is-error");
+    showCompanyImagePreview(urlGetter(empresaAtual || {}), imageSelector, emptySelector, objectUrlKey);
+    return;
+  }
+
+  message.textContent = "Validando imagem...";
+  message.classList.remove("is-error");
+  const imageError = await validateImageFile(file);
+  if (input.files[0] !== file) return;
+  if (imageError) {
+    input.value = "";
+    message.textContent = imageError;
+    message.classList.add("is-error");
+    showCompanyImagePreview(urlGetter(empresaAtual || {}), imageSelector, emptySelector, objectUrlKey);
+    return;
+  }
+
+  message.textContent = file.name;
+  message.classList.remove("is-error");
+  if (companyImageObjectUrls[objectUrlKey]) URL.revokeObjectURL(companyImageObjectUrls[objectUrlKey]);
+  companyImageObjectUrls[objectUrlKey] = URL.createObjectURL(file);
+  const preview = document.querySelector(imageSelector);
+  preview.src = companyImageObjectUrls[objectUrlKey];
+  preview.hidden = false;
+  document.querySelector(emptySelector).hidden = true;
+}
+
+if (companyBannerInput) {
+  companyBannerInput.addEventListener("change", () => handleCompanyImageSelection(
+    companyBannerInput,
+    ".company-banner-message",
+    ".company-banner-preview",
+    ".company-banner-empty",
+    "banner",
+    companyBannerUrl,
+  ));
+}
+
+if (companyLogoInput) {
+  companyLogoInput.addEventListener("change", () => handleCompanyImageSelection(
+    companyLogoInput,
+    ".company-logo-message",
+    ".company-logo-preview",
+    ".company-logo-empty",
+    "logo",
+    companyLogoUrl,
+  ));
 }
 
 if (companySettingsForm) {
@@ -494,6 +623,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function carregarPerfilUsuario() {
+  companyProfileLoading = true;
+  if (companyProfileStatus) {
+    companyProfileStatus.textContent = "Carregando configurações da loja...";
+    companyProfileStatus.dataset.state = "loading";
+    companyProfileStatus.hidden = false;
+  }
+  setCompanyMessage("Carregando configurações...", "loading");
   try {
     const response = await fetch(`${urlNetixZae}/sessions-list-counts`);
     if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
@@ -504,6 +640,8 @@ async function carregarPerfilUsuario() {
     empresaAtual = user;
     fillCompanySettings(user);
     if (openCompanySettingsButton) openCompanySettingsButton.disabled = false;
+    if (companyProfileStatus) companyProfileStatus.hidden = true;
+    if (companySettings.classList.contains("is-open")) document.getElementById("company-name").focus();
 
     const corSistema = normalizedSystemColor(user.corSistema);
 
@@ -511,6 +649,15 @@ async function carregarPerfilUsuario() {
     document.querySelector(".name").textContent = `Olá, ${user.nome || nome || "usuário"}`;
   } catch (error) {
     console.error("Erro ao carregar o perfil do usuário:", error);
+    const message = error.message || "Não foi possível carregar as configurações da loja.";
+    setCompanyMessage(message, "error");
+    if (companyProfileStatus) {
+      companyProfileStatus.textContent = `Não foi possível carregar as configurações: ${message}`;
+      companyProfileStatus.dataset.state = "error";
+      companyProfileStatus.hidden = false;
+    }
+  } finally {
+    companyProfileLoading = false;
   }
 }
 
@@ -522,41 +669,61 @@ async function salvarDadosEmpresa(event) {
     return;
   }
   const bannerFile = companyBannerInput.files[0];
+  const logoFile = companyLogoInput.files[0];
   const companyName = document.getElementById("company-name").value.trim();
   const systemColor = document.getElementById("company-color").value;
+  const about = document.getElementById("company-about").value.trim();
+  const hours = collectCompanyHours();
 
   if (!companyName) {
     setCompanyMessage("Informe o nome da empresa.", "error");
     return;
   }
 
+  for (const day of hours) {
+    if (!day.ativo) continue;
+    if (!isValidCompanyTime(day.abertura) || !isValidCompanyTime(day.fechamento)) {
+      setCompanyMessage(`Informe horários válidos para ${companyWeekdays[day.diaSemana]} (HH:mm).`, "error");
+      return;
+    }
+    if (day.fechamento < day.abertura) {
+      setCompanyMessage(`O fechamento de ${companyWeekdays[day.diaSemana]} não pode ser anterior à abertura.`, "error");
+      return;
+    }
+  }
+
+  const existingHours = parseCompanyHours(empresaAtual.horariosFuncionamento);
+  const hoursChanged = JSON.stringify(hours) !== JSON.stringify(existingHours);
+  const nameChanged = companyName !== (empresaAtual.nome || "");
+  const colorChanged = systemColor.toLowerCase() !== normalizedSystemColor(empresaAtual.corSistema).toLowerCase();
+  const aboutChanged = about !== (empresaAtual.sobre || "");
+  if (!nameChanged && !colorChanged && !aboutChanged && !hoursChanged && !bannerFile && !logoFile) {
+    setCompanyMessage("Não há alterações para salvar.", "error");
+    return;
+  }
+
   saveButton.disabled = true;
   try {
     const formData = new FormData();
-    let hasChanges = false;
+    formData.append("nome", companyName);
+    formData.append("corSistema", systemColor);
+    formData.append("sobre", about);
+    formData.append("horariosFuncionamento", JSON.stringify(hours));
 
-    if (companyName !== (empresaAtual.nome || "")) {
-      formData.append("nome", companyName);
-      hasChanges = true;
-    }
-    if (systemColor.toLowerCase() !== normalizedSystemColor(empresaAtual.corSistema).toLowerCase()) {
-      formData.append("corSistema", systemColor);
-      hasChanges = true;
-    }
     if (bannerFile) {
       setCompanyMessage("Validando banner...", "loading");
       const imageError = await validateImageFile(bannerFile);
       if (imageError) throw new Error(imageError);
       formData.append("banner", bannerFile);
-      hasChanges = true;
+    }
+    if (logoFile) {
+      setCompanyMessage("Validando logo...", "loading");
+      const imageError = await validateImageFile(logoFile);
+      if (imageError) throw new Error(imageError);
+      formData.append("logo", logoFile);
     }
 
-    if (!hasChanges) {
-      setCompanyMessage("Não há alterações para salvar.", "error");
-      return;
-    }
-
-    setCompanyMessage(bannerFile ? "Enviando alterações e banner..." : "Salvando alterações...", "loading");
+    setCompanyMessage(bannerFile || logoFile ? "Enviando alterações e imagens..." : "Salvando alterações...", "loading");
     const response = await fetch(`${urlNetixZae}/users/${id_user}`, {
       method: "PUT",
       headers: {

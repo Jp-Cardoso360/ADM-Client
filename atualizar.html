@@ -41,6 +41,7 @@
       </button>
      
 </main>
+    <p class="company-profile-status" role="status" aria-live="polite" hidden></p>
     <section class="company-settings" aria-hidden="true">
       <div class="company-settings-panel" role="dialog" aria-modal="true" aria-labelledby="company-settings-title">
         <button class="company-settings-close" type="button" aria-label="Fechar configurações">
@@ -53,6 +54,8 @@
           <input type="text" id="company-name" name="nome" required />
           <label for="company-color">Cor do sistema</label>
           <input type="color" id="company-color" name="corSistema" />
+          <label for="company-about">Sobre o comércio</label>
+          <textarea id="company-about" name="sobre" rows="4" placeholder="Conte a história, descrição ou endereço do comércio"></textarea>
           <label>Banner atual</label>
           <div class="company-banner-preview-wrap">
             <img class="company-banner-preview" alt="Pré-visualização do banner da empresa" hidden />
@@ -61,6 +64,19 @@
           <label for="company-banner">Novo banner (opcional)</label>
           <input type="file" id="company-banner" name="banner" accept="image/*" />
           <p class="company-banner-message" aria-live="polite"></p>
+          <label>Logo atual</label>
+          <div class="company-logo-preview-wrap">
+            <img class="company-logo-preview" alt="Pré-visualização da logo do comércio" hidden />
+            <p class="company-logo-empty">Nenhuma logo cadastrada</p>
+          </div>
+          <label for="company-logo">Nova logo (opcional)</label>
+          <input type="file" id="company-logo" name="logo" accept="image/*" />
+          <p class="company-logo-message" aria-live="polite"></p>
+          <fieldset class="company-hours">
+            <legend>Horários de funcionamento</legend>
+            <p class="company-hours-help">Ative os dias em que o comércio funciona e informe os horários.</p>
+            <div class="company-hours-list"></div>
+          </fieldset>
           <button class="company-settings-save" type="submit">Salvar alterações</button>
         </form>
       </div>

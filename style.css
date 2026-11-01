@@ -699,6 +699,21 @@ body {
   backdrop-filter: blur(3px);
 }
 
+.company-profile-status {
+  margin: 8px 16px;
+  color: var(--muted-color);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.company-profile-status[data-state="error"] {
+  color: #9c2c2c;
+}
+
+.company-profile-status[data-state="loading"] {
+  color: var(--system-primary-color);
+}
+
 .company-settings.is-open {
   display: flex;
 }
@@ -750,7 +765,9 @@ body {
 }
 
 .company-settings-form input[type="text"],
-.company-settings-form input[type="file"] {
+.company-settings-form input[type="file"],
+.company-settings-form textarea,
+.company-hours input[type="time"] {
   width: 100%;
   min-height: 42px;
   padding: 9px 10px;
@@ -759,6 +776,11 @@ body {
   background: #ffffff;
   color: var(--text-color);
   font: inherit;
+}
+
+.company-settings-form textarea {
+  min-height: 100px;
+  resize: vertical;
 }
 
 .company-settings-form input[type="color"] {
@@ -782,6 +804,17 @@ body {
   background: var(--page-background);
 }
 
+.company-logo-preview-wrap {
+  display: grid;
+  width: 100%;
+  min-height: 130px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed var(--border-color);
+  border-radius: 7px;
+  background: var(--page-background);
+}
+
 .company-banner-preview {
   display: block;
   width: 100%;
@@ -790,12 +823,22 @@ body {
   object-fit: contain;
 }
 
+.company-logo-preview {
+  display: block;
+  width: min(100%, 220px);
+  height: 130px;
+  object-fit: contain;
+}
+
 .company-banner-preview[hidden],
-.company-banner-empty[hidden] {
+.company-logo-preview[hidden],
+.company-banner-empty[hidden],
+.company-logo-empty[hidden] {
   display: none;
 }
 
-.company-banner-empty {
+.company-banner-empty,
+.company-logo-empty {
   margin: 0;
   padding: 24px 12px;
   color: var(--muted-color);
@@ -803,6 +846,7 @@ body {
 }
 
 .company-banner-message,
+.company-logo-message,
 .company-settings-message {
   min-height: 1.25em;
   margin: 0;
@@ -812,6 +856,7 @@ body {
 }
 
 .company-banner-message.is-error,
+.company-logo-message.is-error,
 .company-settings-message[data-state="error"] {
   color: #9c2c2c;
 }
@@ -822,6 +867,71 @@ body {
 
 .company-settings-message[data-state="loading"] {
   color: var(--system-primary-color);
+}
+
+.company-hours {
+  min-width: 0;
+  margin: 12px 0 4px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.company-hours legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.company-hours-help {
+  margin: 0 0 12px;
+  color: var(--muted-color);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.company-hours-list {
+  display: grid;
+  gap: 10px;
+}
+
+.company-hours-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.company-hours-day {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.company-hours-day input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--system-primary-color);
+}
+
+.company-hours-time label {
+  display: block;
+  margin: 0 0 4px;
+  color: var(--muted-color);
+  font-size: 0.78rem;
+}
+
+.company-hours input[type="time"] {
+  min-height: 42px;
+  padding: 7px;
+}
+
+.company-hours input[type="time"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .company-settings-save {
@@ -1798,5 +1908,24 @@ body {
     flex-basis: 100%;
     min-height: 230px;
     max-width: none;
+  }
+
+  .company-hours {
+    padding: 10px 8px;
+  }
+
+  .company-hours-row {
+    grid-template-columns: minmax(85px, 0.75fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .company-hours-day {
+    gap: 5px;
+    font-size: 0.86rem;
+  }
+
+  .company-hours input[type="time"] {
+    padding: 6px 3px;
+    font-size: 0.9rem;
   }
 }
