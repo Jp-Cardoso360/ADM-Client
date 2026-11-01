@@ -44,40 +44,94 @@
     <p class="company-profile-status" role="status" aria-live="polite" hidden></p>
     <section class="company-settings" aria-hidden="true">
       <div class="company-settings-panel" role="dialog" aria-modal="true" aria-labelledby="company-settings-title">
-        <button class="company-settings-close" type="button" aria-label="Fechar configurações">
-          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </button>
-        <h2 id="company-settings-title">Dados da empresa</h2>
+        <header class="company-settings-header">
+          <div>
+            <p class="company-settings-eyebrow">PAINEL DA LOJA</p>
+            <h2 id="company-settings-title">Configurações da loja</h2>
+            <p class="company-settings-intro">Gerencie a identidade, apresentação e horários do seu comércio.</p>
+          </div>
+          <button class="company-settings-close" type="button" aria-label="Fechar configurações">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </header>
         <form class="company-settings-form" id="company-settings-form">
           <p class="company-settings-message" aria-live="polite"></p>
-          <label for="company-name">Nome da empresa</label>
-          <input type="text" id="company-name" name="nome" required />
-          <label for="company-color">Cor do sistema</label>
-          <input type="color" id="company-color" name="corSistema" />
-          <label for="company-about">Sobre o comércio</label>
-          <textarea id="company-about" name="sobre" rows="4" placeholder="Conte a história, descrição ou endereço do comércio"></textarea>
-          <label>Banner atual</label>
-          <div class="company-banner-preview-wrap">
-            <img class="company-banner-preview" alt="Pré-visualização do banner da empresa" hidden />
-            <p class="company-banner-empty">Nenhum banner cadastrado</p>
+          <div class="company-settings-layout">
+            <section class="company-settings-card company-identity-card" aria-labelledby="company-identity-title">
+              <header class="company-settings-card-header">
+                <span class="company-settings-card-icon" aria-hidden="true"><i class="fa-solid fa-store"></i></span>
+                <div>
+                  <h3 id="company-identity-title">Identidade da loja</h3>
+                  <p>As informações que seus clientes veem primeiro.</p>
+                </div>
+              </header>
+              <div class="company-identity-content">
+                <div class="company-logo-field">
+                  <p class="company-logo-label">Logo atual</p>
+                  <div class="company-logo-preview-wrap">
+                    <img class="company-logo-preview" alt="Pré-visualização da logo do comércio" hidden />
+                    <p class="company-logo-empty">Adicione uma logo</p>
+                  </div>
+                  <input type="file" id="company-logo" name="logo" accept="image/*" />
+                  <label class="company-file-button" for="company-logo">Escolher logo</label>
+                  <p class="company-logo-message" aria-live="polite"></p>
+                </div>
+                <div class="company-identity-fields">
+                  <div class="company-settings-field">
+                    <label for="company-name">Nome da loja</label>
+                    <input type="text" id="company-name" name="nome" placeholder="Ex.: Café da Praça" required />
+                  </div>
+                  <div class="company-settings-field company-color-field">
+                    <label for="company-color">Cor principal do sistema</label>
+                    <div class="company-color-control">
+                      <input type="color" id="company-color" name="corSistema" aria-label="Escolher cor principal do sistema" />
+                      <span>Escolha uma cor que represente sua marca.</span>
+                    </div>
+                  </div>
+                  <div class="company-settings-field company-about-field">
+                    <label for="company-about">Sobre o comércio</label>
+                    <textarea id="company-about" name="sobre" rows="4" placeholder="Conte a história, descreva sua loja ou informe o endereço."></textarea>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="company-settings-card company-banner-card" aria-labelledby="company-banner-title">
+              <header class="company-settings-card-header">
+                <span class="company-settings-card-icon" aria-hidden="true"><i class="fa-regular fa-image"></i></span>
+                <div>
+                  <h3 id="company-banner-title">Banner da loja</h3>
+                  <p>Uma imagem para destacar sua loja no catálogo.</p>
+                </div>
+              </header>
+              <div class="company-banner-preview-wrap">
+                <img class="company-banner-preview" alt="Pré-visualização do banner da empresa" hidden />
+                <p class="company-banner-empty">Nenhum banner cadastrado</p>
+              </div>
+              <input type="file" id="company-banner" name="banner" accept="image/*" />
+              <label class="company-file-button" for="company-banner">Escolher imagem do banner</label>
+              <p class="company-banner-message" aria-live="polite"></p>
+            </section>
+            <section class="company-settings-card company-hours-card" aria-labelledby="company-hours-title">
+              <header class="company-settings-card-header">
+                <span class="company-settings-card-icon" aria-hidden="true"><i class="fa-regular fa-clock"></i></span>
+                <div>
+                  <h3 id="company-hours-title">Horários de funcionamento</h3>
+                  <p>Defina em quais dias e horários sua loja atende.</p>
+                </div>
+              </header>
+              <fieldset class="company-hours">
+                <legend class="visually-hidden">Horários de funcionamento por dia</legend>
+                <div class="company-hours-list"></div>
+              </fieldset>
+            </section>
           </div>
-          <label for="company-banner">Novo banner (opcional)</label>
-          <input type="file" id="company-banner" name="banner" accept="image/*" />
-          <p class="company-banner-message" aria-live="polite"></p>
-          <label>Logo atual</label>
-          <div class="company-logo-preview-wrap">
-            <img class="company-logo-preview" alt="Pré-visualização da logo do comércio" hidden />
-            <p class="company-logo-empty">Nenhuma logo cadastrada</p>
-          </div>
-          <label for="company-logo">Nova logo (opcional)</label>
-          <input type="file" id="company-logo" name="logo" accept="image/*" />
-          <p class="company-logo-message" aria-live="polite"></p>
-          <fieldset class="company-hours">
-            <legend>Horários de funcionamento</legend>
-            <p class="company-hours-help">Ative os dias em que o comércio funciona e informe os horários.</p>
-            <div class="company-hours-list"></div>
-          </fieldset>
-          <button class="company-settings-save" type="submit">Salvar alterações</button>
+          <footer class="company-settings-footer">
+            <span>Suas alterações ficam visíveis para os clientes após salvar.</span>
+            <button class="company-settings-save" type="submit">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              Salvar alterações
+            </button>
+          </footer>
         </form>
       </div>
     </section>

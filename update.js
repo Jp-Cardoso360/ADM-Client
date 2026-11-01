@@ -247,6 +247,7 @@ if (openCompanySettingsButton && companySettings) {
   openCompanySettingsButton.addEventListener("click", () => {
     companySettings.classList.add("is-open");
     companySettings.setAttribute("aria-hidden", "false");
+    document.body.classList.add("company-settings-active");
     if (empresaAtual) {
       fillCompanySettings(empresaAtual);
       document.getElementById("company-name").focus();
@@ -262,6 +263,7 @@ function closeCompanySettingsModal() {
   companySettingsDirty = false;
   companySettings.classList.remove("is-open");
   companySettings.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("company-settings-active");
   openCompanySettingsButton?.focus();
 }
 
@@ -744,6 +746,7 @@ async function salvarDadosEmpresa(event) {
     fillCompanySettings(empresaAtual);
     companySettings.classList.remove("is-open");
     companySettings.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("company-settings-active");
     mostrarSucesso("Dados da empresa atualizados com sucesso!");
   } catch (error) {
     console.error("Erro ao atualizar dados da empresa:", error);
