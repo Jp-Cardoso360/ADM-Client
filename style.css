@@ -1641,6 +1641,210 @@ body {
   background: #25332c;
 }
 
+.addons-section {
+  width: 100%;
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #f8faf9;
+}
+
+.addons-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.addons-section-header h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.addons-section-header p {
+  margin: 5px 0 0;
+  color: var(--muted-color);
+  font-size: 0.85rem;
+}
+
+.add-addon-group,
+.addon-add-item {
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid #b9d9c7;
+  border-radius: 7px;
+  background: #eaf7ef;
+  color: #176b3e;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addon-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.addon-group {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.addon-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.addon-group-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.addon-remove-group,
+.addon-remove-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #f0caca;
+  border-radius: 7px;
+  background: #fff5f5;
+  color: #a52c2c;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.addon-group > label,
+.addon-rules > label:not(.addon-checkbox),
+.addon-item > label:not(.addon-checkbox) {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.addon-group input[type="text"],
+.addon-group input[type="number"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #cbd7d1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-color);
+  font: inherit;
+}
+
+.addon-rules {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(100px, 0.55fr));
+  align-items: end;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.addon-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-height: 40px;
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.addon-checkbox input {
+  width: 18px !important;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0 !important;
+  accent-color: var(--system-primary-color);
+}
+
+.addon-items {
+  display: grid;
+  gap: 8px;
+}
+
+.addon-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(100px, 0.7fr) auto 38px;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #edf1ef;
+  border-radius: 7px;
+  background: #fbfcfb;
+}
+
+.addon-item-available {
+  white-space: nowrap;
+}
+
+.addon-remove-item {
+  width: 38px;
+  min-width: 38px;
+  padding: 6px;
+}
+
+.addon-add-item {
+  margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .addons-section {
+    padding: 12px;
+  }
+
+  .addons-section-header {
+    flex-direction: column;
+  }
+
+  .addon-rules {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .addon-rules .addon-checkbox {
+    grid-column: 1 / -1;
+  }
+
+  .addon-item {
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 0.7fr) 38px;
+  }
+
+  .addon-item-available {
+    grid-column: 1 / 3;
+    grid-row: 2;
+  }
+
+  .addon-remove-item {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+}
+
 .edit,
 .new-conteiner,
 .sucess,

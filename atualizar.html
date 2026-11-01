@@ -213,6 +213,19 @@
           <input type="file" id="att-thumbnail" accept="image/*" />
           <p class="image-message" id="att-image-message" aria-live="polite"></p>
 
+          <section class="addons-section" aria-labelledby="att-addons-title">
+            <header class="addons-section-header">
+              <div>
+                <h3 id="att-addons-title">Adicionais e Opcionais do Produto</h3>
+                <p>Crie grupos de opções para personalizar este produto.</p>
+              </div>
+              <button class="add-addon-group" type="button" data-target="att-addon-groups">
+                ➕ Criar Novo Grupo de Adicionais
+              </button>
+            </header>
+            <div class="addon-groups" id="att-addon-groups"></div>
+          </section>
+
           <button class="apagarProduto">
             <i class="fa-solid fa-trash"></i>
             Apagar produto
@@ -254,6 +267,18 @@
         </select>
         <label for="linkImg">Imagem do produto</label>
         <input type="file" id="linkImg" accept="image/*" required />
+        <section class="addons-section" aria-labelledby="new-addons-title">
+          <header class="addons-section-header">
+            <div>
+              <h3 id="new-addons-title">Adicionais e Opcionais do Produto</h3>
+              <p>Crie grupos de opções para personalizar este produto.</p>
+            </div>
+            <button class="add-addon-group" type="button" data-target="new-addon-groups">
+              ➕ Criar Novo Grupo de Adicionais
+            </button>
+          </header>
+          <div class="addon-groups" id="new-addon-groups"></div>
+        </section>
         <button class="new-produto">Criar produto</button>
       </div>
     </main>
