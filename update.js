@@ -459,17 +459,26 @@ function renderProducts(products) {
   const productsByCategory = new Map(categories.map((category) => [category.id, []]));
   const uncategorizedProducts = [];
 
-  products.forEach((product) => {
+  products.forEach((product, order) => {
     const categoryId = String(product.categoriaId ?? product.categoryId ?? "");
     const group = productsByCategory.get(categoryId);
-    if (group) group.push(product);
-    else uncategorizedProducts.push(product);
+    const orderedProduct = { product, order };
+    if (group) group.push(orderedProduct);
+    else uncategorizedProducts.push(orderedProduct);
   });
 
   categories.forEach((category) => {
-    renderProductGroup(container, category.name, productsByCategory.get(category.id));
+    const orderedProducts = productsByCategory.get(category.id)
+      .sort((first, second) => first.order - second.order)
+      .map(({ product }) => product);
+    renderProductGroup(container, category.name, orderedProducts);
   });
-  if (uncategorizedProducts.length) renderProductGroup(container, "Sem categoria", uncategorizedProducts);
+  if (uncategorizedProducts.length) {
+    const orderedProducts = uncategorizedProducts
+      .sort((first, second) => first.order - second.order)
+      .map(({ product }) => product);
+    renderProductGroup(container, "Sem categoria", orderedProducts);
+  }
 const meuSistema = document.querySelector(".meuSistema");
 
 async function abrirMeuCatalogo() {
