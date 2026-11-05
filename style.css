@@ -1701,8 +1701,7 @@ body {
 
 .product-addon-option input,
 .addon-product-option input,
-.addon-editor-checkbox input,
-.addon-link-modes input {
+.addon-editor-checkbox input {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
@@ -1810,7 +1809,6 @@ body {
   font-size: 0.9rem;
 }
 
-.addon-new-group,
 .addon-editor-save,
 .addon-link-submit {
   min-height: 42px;
@@ -1821,6 +1819,32 @@ body {
   color: #ffffff;
   font: 600 0.9rem "Roboto", sans-serif;
   cursor: pointer;
+}
+
+.addon-manager-heading .addon-new-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #176b3e;
+  font: 600 0.9rem "Roboto", sans-serif;
+  cursor: pointer;
+}
+
+.addon-manager-heading .addon-new-group:hover {
+  background: transparent;
+  color: #10532f;
+  text-decoration: underline;
+}
+
+.addon-manager-heading .addon-new-group:focus-visible {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 3px;
 }
 
 .addon-manager-feedback,
@@ -1924,10 +1948,6 @@ body {
 }
 
 .addon-group-form[hidden],
-.addon-link-products[hidden] {
-  display: none;
-}
-
 .addon-group-form h3,
 .addon-bulk-link h3 {
   margin: 0 0 12px;
@@ -2057,39 +2077,6 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-
-.addon-link-modes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  margin: 12px 0;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
-.addon-link-modes legend {
-  padding: 0 5px;
-  color: var(--text-color);
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.addon-link-modes label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  color: var(--text-color);
-  font-size: 0.86rem;
-}
-
-.addon-link-category > label {
-  display: block;
-  color: var(--text-color);
-  font-size: 0.86rem;
-  font-weight: 600;
 }
 
 .addon-link-products > p {

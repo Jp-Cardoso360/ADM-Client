@@ -1074,28 +1074,16 @@ const addonGroupForm = document.getElementById("addon-group-form");
 const addonLinkForm = document.getElementById("addon-link-form");
 const addonLinkFeedback = document.querySelector(".addon-link-feedback");
 
-function renderAddonCategories() {
-  const select = document.getElementById("addon-link-category-select");
-  const selectedId = select.value;
-  select.replaceChildren(new Option("Selecione uma categoria", ""));
-  categories.forEach((category) => select.add(new Option(category.name, category.id)));
-  select.value = categories.some((category) => category.id === selectedId) ? selectedId : "";
-}
-
 function renderAddonProductChecklist() {
   const container = document.querySelector(".addon-product-checklist");
   container.replaceChildren();
-  const categoryId = document.getElementById("addon-link-category-select").value;
-  const products = addonGroupProducts.filter((product) => {
-    return !categoryId || String(product.categoriaId ?? product.categoryId ?? "") === categoryId;
-  });
-  if (!products.length) {
+  if (!addonGroupProducts.length) {
     const empty = document.createElement("p");
-    empty.textContent = categoryId ? "Não há produtos nesta categoria." : "Nenhum produto encontrado.";
+    empty.textContent = "Nenhum produto encontrado.";
     container.append(empty);
     return;
   }
-  products.forEach((product) => {
+  addonGroupProducts.forEach((product) => {
     const id = String(product._id ?? product.id ?? "");
     if (!id) return;
     const label = document.createElement("label");
@@ -1129,8 +1117,7 @@ async function openAddonGroupManager() {
   document.getElementById("addon-group-form").hidden = true;
   setAddonManagerFeedback("Carregando grupos...");
   try {
-    const results = await Promise.all([loadAddonGroups(), loadCategories(), loadAddonLinkProducts()]);
-    renderAddonCategories();
+    const results = await Promise.all([loadAddonGroups(), loadAddonLinkProducts()]);
     renderAddonProductChecklist();
     setAddonManagerFeedback(`${results[0].length} grupo(s) carregado(s).`);
   } catch (error) {
@@ -1202,42 +1189,21 @@ addonGroupForm?.addEventListener("submit", async (event) => {
   }
 });
 
-document.querySelectorAll('input[name="addon-link-mode"]').forEach((input) => {
-  input.addEventListener("change", () => {
-    const isProducts = document.querySelector('input[name="addon-link-mode"]:checked').value === "products";
-    document.querySelector(".addon-link-category").hidden = isProducts;
-    document.querySelector(".addon-link-products").hidden = !isProducts;
-    addonLinkFeedback.textContent = "";
-  });
-});
-
-document.getElementById("addon-link-category-select")?.addEventListener("change", renderAddonProductChecklist);
-
 addonLinkForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   addonLinkFeedback.textContent = "";
   const groupId = document.getElementById("addon-link-group").value;
-  const mode = document.querySelector('input[name="addon-link-mode"]:checked').value;
   const payload = { groupId };
   if (!groupId) {
     addonLinkFeedback.textContent = "Selecione um grupo para vincular.";
     return;
   }
-  if (mode === "category") {
-    const categoryId = document.getElementById("addon-link-category-select").value;
-    if (!categoryId) {
-      addonLinkFeedback.textContent = "Selecione uma categoria.";
-      return;
-    }
-    payload.categoryId = categoryId;
-  } else {
-    const productIds = [...document.querySelectorAll('input[name="addon-product-id"]:checked')].map((input) => input.value);
-    if (!productIds.length) {
-      addonLinkFeedback.textContent = "Selecione ao menos um produto.";
-      return;
-    }
-    payload.productIds = productIds;
+  const productIds = [...document.querySelectorAll('input[name="addon-product-id"]:checked')].map((input) => input.value);
+  if (!productIds.length) {
+    addonLinkFeedback.textContent = "Selecione ao menos um produto.";
+    return;
   }
+  payload.productIds = productIds;
 
   const submitButton = document.querySelector(".addon-link-submit");
   submitButton.disabled = true;

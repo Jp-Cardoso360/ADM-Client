@@ -184,25 +184,14 @@
         </form>
 
         <section class="addon-bulk-link" aria-labelledby="addon-bulk-link-title">
-          <h3 id="addon-bulk-link-title">🔗 Vincular a Produtos/Categorias</h3>
-          <p>Aplique um grupo existente a uma categoria inteira ou a produtos específicos.</p>
+          <h3 id="addon-bulk-link-title">🔗 Vincular a Produtos</h3>
+          <p>Selecione os produtos que devem usar este grupo de adicionais.</p>
           <form id="addon-link-form">
             <label for="addon-link-group">Grupo de adicionais</label>
             <select id="addon-link-group" required>
               <option value="">Selecione um grupo</option>
             </select>
-            <fieldset class="addon-link-modes">
-              <legend>Onde aplicar?</legend>
-              <label><input type="radio" name="addon-link-mode" value="category" checked /> Categoria inteira</label>
-              <label><input type="radio" name="addon-link-mode" value="products" /> Produtos específicos</label>
-            </fieldset>
-            <div class="addon-link-category">
-              <label for="addon-link-category-select">Categoria</label>
-              <select id="addon-link-category-select">
-                <option value="">Selecione uma categoria</option>
-              </select>
-            </div>
-            <div class="addon-link-products" hidden>
+            <div class="addon-link-products">
               <p>Selecione os produtos</p>
               <div class="addon-product-checklist"></div>
             </div>
